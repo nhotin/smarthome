@@ -1,0 +1,190 @@
+mqtt:
+  host: 127.0.0.1
+  port: 1883
+
+database:
+  path: /config/frigate.db
+
+# ─── Detector AI ────────────────────────────────────────────────────────────
+detectors:
+  cpu:
+    type: cpu
+    num_threads: 2
+
+# ─── Phát hiện đối tượng & con vật ──────────────────────────────────────────
+detect:
+  enabled: true
+  fps: 5
+
+objects:
+  track:
+    - person
+    - car
+    - motorcycle
+    - bicycle
+    - dog
+    - cat
+  filters:
+    dog:
+      min_score: 0.45
+      threshold: 0.60
+    cat:
+      min_score: 0.45
+      threshold: 0.60
+
+# ─── Phân loại xem lại (Review) ──────────────────────────────────────────────
+review:
+  alerts:
+    labels:
+      - person
+      - car
+      - motorcycle
+  detections:
+    labels:
+      - dog
+      - cat
+      - bicycle
+
+# ─── Ghi hình liên tục 24/7 ──────────────────────────────────────────────────
+record:
+  enabled: true
+  continuous:
+    days: 7
+  motion:
+    days: 7
+  alerts:
+    retain:
+      days: 14
+      mode: motion
+  detections:
+    retain:
+      days: 14
+      mode: motion
+
+# ─── Ảnh chụp sự kiện ────────────────────────────────────────────────────────
+snapshots:
+  enabled: true
+  retain:
+    default: 14
+
+# ─── go2rtc: lấy RTSP stream từ Tuya qua HA API ─────────────────────────────
+go2rtc:
+  streams:
+    cong:
+      - exec:/scripts/tuya_stream.sh cong {{output}}
+    san_truoc:
+      - exec:/scripts/tuya_stream.sh san_truoc {{output}}
+    phong_khach:
+      - exec:/scripts/tuya_stream.sh phong_khach {{output}}
+    bep:
+      - exec:/scripts/tuya_stream.sh bep {{output}}
+    san_sau:
+      - exec:/scripts/tuya_stream.sh san_sau {{output}}
+    ban_cong:
+      - exec:/scripts/tuya_stream.sh ban_cong {{output}}
+
+# ─── Camera definitions ───────────────────────────────────────────────────────
+cameras:
+  cong:
+    friendly_name: "Cổng"
+    ui:
+      order: 1
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cong
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - detect
+    detect:
+      enabled: true
+      width: 480
+      height: 544
+      fps: 5
+
+  san_truoc:
+    friendly_name: "Sân Trước"
+    ui:
+      order: 2
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/san_truoc
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - detect
+    detect:
+      enabled: true
+      width: 640
+      height: 360
+      fps: 5
+
+  phong_khach:
+    friendly_name: "Phòng Khách"
+    ui:
+      order: 3
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/phong_khach
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - detect
+    detect:
+      enabled: true
+      width: 640
+      height: 360
+      fps: 5
+
+  bep:
+    friendly_name: "Nhà Bếp"
+    ui:
+      order: 4
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/bep
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - detect
+    detect:
+      enabled: true
+      width: 640
+      height: 720
+      fps: 5
+
+  san_sau:
+    friendly_name: "Sân Sau"
+    ui:
+      order: 5
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/san_sau
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - detect
+    detect:
+      enabled: true
+      width: 640
+      height: 360
+      fps: 5
+
+  ban_cong:
+    friendly_name: "Ban Công"
+    ui:
+      order: 6
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/ban_cong
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - detect
+    detect:
+      enabled: true
+      width: 640
+      height: 360
+      fps: 5
+
+version: 0.18-0

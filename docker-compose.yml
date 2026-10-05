@@ -1,0 +1,44 @@
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
+    environment:
+      - TZ=${TIMEZONE:-Asia/Ho_Chi_Minh}
+    volumes:
+      - ./config:/config
+      - ./media:/media
+      - ${RECORDINGS_PATH:-/mnt/hdd_1tb_seagate/camera_recordings}:/media/cameras
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto:latest
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/data:/mosquitto/data
+
+  frigate:
+    container_name: frigate
+    privileged: true
+    restart: unless-stopped
+    image: ghcr.io/blakeblackshear/frigate:stable
+    shm_size: "512mb"
+    network_mode: host
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./frigate/config:/config
+      - ./scripts:/scripts:ro
+      - ${RECORDINGS_PATH:-/mnt/hdd_1tb_seagate/camera_recordings}:/media/frigate
+      - type: tmpfs
+        target: /tmp/cache
+        tmpfs:
+          size: 1000000000
+    environment:
+      - FRIGATE_RTSP_PASSWORD=${FRIGATE_RTSP_PASSWORD:-password}
+      - GO2RTC_ALLOW_ARBITRARY_EXEC=true

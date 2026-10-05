@@ -1,0 +1,136 @@
+- id: 'frigate_detection_notification'
+  alias: 'Camera AI - Thông báo phát hiện đối tượng về điện thoại'
+  description: 'Gửi thông báo có snapshot và nút bấm về điện thoại Pixel khi có Người hoặc Chó/Mèo. Lọc thông minh: Cổng có 2 nút Mở/Đóng cổng và 1 cánh (không icon), Khách & Bếp chỉ báo Người ban đêm.'
+  trigger:
+    - platform: mqtt
+      topic: frigate/events
+  condition:
+    - condition: template
+      value_template: >-
+        {{ trigger.payload_json.after.has_snapshot == true }}
+    - condition: template
+      value_template: >-
+        {{ (trigger.payload_json.type == 'new' and trigger.payload_json.after.has_snapshot) or 
+           (trigger.payload_json.before.has_snapshot == false and trigger.payload_json.after.has_snapshot == true) }}
+    - condition: template
+      value_template: >-
+        {% set cam = trigger.payload_json.after.camera %}
+        {% set lbl = trigger.payload_json.after.label %}
+        {% set is_night = now().hour >= 23 or now().hour < 5 %}
+        {% if cam == 'cong' %}
+          {{ lbl in ['person', 'dog', 'cat'] }}
+        {% elif cam in ['san_truoc', 'san_sau', 'ban_cong'] %}
+          {{ lbl in ['person', 'dog', 'cat'] }}
+        {% elif cam in ['phong_khach', 'bep'] %}
+          {% if lbl in ['dog', 'cat'] %}
+            {{ true }}
+          {% elif lbl == 'person' %}
+            {{ is_night }}
+          {% else %}
+            {{ false }}
+          {% endif %}
+        {% else %}
+          {{ false }}
+        {% endif %}
+  action:
+    - variables:
+        event_id: "{{ trigger.payload_json.after.id }}"
+        camera: "{{ trigger.payload_json.after.camera }}"
+        label: "{{ trigger.payload_json.after.label }}"
+        camera_map:
+          phong_khach: "Phòng Khách"
+          san_truoc: "Sân Trước"
+          san_sau: "Sân Sau"
+          cong: "Cổng"
+          bep: "Nhà Bếp"
+          ban_cong: "Ban Công"
+        label_map:
+          person: "Người 🚶"
+          car: "Ô tô 🚗"
+          motorcycle: "Xe máy 🏍️"
+          bicycle: "Xe đạp 🚲"
+          dog: "Chó 🐕"
+          cat: "Mèo 🐈"
+        cam_name: "{{ camera_map.get(camera, camera) }}"
+        lbl_name: "{{ label_map.get(label, label) }}"
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ camera in ['cong', 'san_truoc'] }}"
+          sequence:
+            - service: notify.mobile_app_pixel_10_pro_xl
+              data:
+                title: "🔔 Phát hiện {{ lbl_name }} tại {{ cam_name }}"
+                message: "Thời gian: {{ now().strftime('%H:%M:%S') }}"
+                data:
+                  tag: "{{ event_id }}"
+                  alert_once: true
+                  image: "/api/frigate/notifications/{{ event_id }}/snapshot.jpg"
+                  clickAction: "/frigate/"
+                  channel: "Camera_Alerts"
+                  actions:
+                    - action: "URI"
+                      title: "Xem clip"
+                      uri: "/api/frigate/notifications/{{ event_id }}/clip.mp4"
+                    - action: "TOGGLE_MAIN_GATE"
+                      title: "Mở/Đóng cổng"
+                    - action: "TOGGLE_SUB_GATE"
+                      title: "Mở/Đóng 1 cánh"
+      default:
+        - service: notify.mobile_app_pixel_10_pro_xl
+          data:
+            title: "🔔 Phát hiện {{ lbl_name }} tại {{ cam_name }}"
+            message: "Thời gian: {{ now().strftime('%H:%M:%S') }}"
+            data:
+              tag: "{{ event_id }}"
+              alert_once: true
+              image: "/api/frigate/notifications/{{ event_id }}/snapshot.jpg"
+              clickAction: "/frigate/"
+              channel: "Camera_Alerts"
+              actions:
+                - action: "URI"
+                  title: "Xem clip"
+                  uri: "/api/frigate/notifications/{{ event_id }}/clip.mp4"
+                - action: "URI"
+                  title: "Trực tiếp"
+                  uri: "/frigate/"
+  mode: parallel
+  max: 10
+
+- id: 'frigate_notification_action_toggle_main_gate'
+  alias: 'Camera AI - Mở hoặc Đóng toàn bộ cổng từ thông báo'
+  description: 'Bật công tắc xung 0.5s main_gate khi nhấn nút Mở/Đóng cổng'
+  trigger:
+    - platform: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: TOGGLE_MAIN_GATE
+  action:
+    - service: switch.turn_on
+      target:
+        entity_id: switch.main_gate
+    - service: notify.mobile_app_pixel_10_pro_xl
+      data:
+        message: "Đã kích hoạt: Mở/Đóng toàn bộ cổng chính"
+        data:
+          tag: "gate_status"
+  mode: single
+
+- id: 'frigate_notification_action_toggle_sub_gate'
+  alias: 'Camera AI - Mở hoặc Đóng 1 cánh cổng từ thông báo'
+  description: 'Bật công tắc xung 0.5s sub_gate khi nhấn nút Mở/Đóng 1 cánh'
+  trigger:
+    - platform: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: TOGGLE_SUB_GATE
+  action:
+    - service: switch.turn_on
+      target:
+        entity_id: switch.sub_gate
+    - service: notify.mobile_app_pixel_10_pro_xl
+      data:
+        message: "Đã kích hoạt: Mở/Đóng 1 cánh cổng"
+        data:
+          tag: "gate_status"
+  mode: single

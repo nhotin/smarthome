@@ -1,0 +1,58 @@
+# ==============================================================================
+# GITIGNORE - BẢO MẬT DỰ ÁN HOME ASSISTANT & FRIGATE NVR (PUBLIC REPO)
+# ==============================================================================
+
+# Environment Secrets & Tokens
+.env
+.env.*
+!.env.example
+*.token
+*.token.txt
+*token*.txt
+frigate_token.txt
+
+# Home Assistant Storage & Credentials (CHỨA MẬT KHẨU & REFRESH TOKENS)
+config/.storage/
+config/.cloud/
+config/.cache/
+config/deps/
+config/.HA_VERSION
+config/.ha_run.lock
+
+# Cơ sở dữ liệu SQLite & Runtime Locks
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+config/home-assistant_v2.db*
+frigate/config/*.db*
+frigate/config/backup*
+frigate/config/model_cache/
+frigate/config/.*
+mosquitto/data/
+mosquitto/log/
+
+# Nhật ký hệ thống (Logs)
+*.log
+*.log.*
+config/home-assistant.log*
+
+# File tạm và Media recordings
+media/
+media/**
+config/tts/
+/tmp/cache/
+
+# Python compiled cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Hệ điều hành & Editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/

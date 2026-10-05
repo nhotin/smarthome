@@ -1,0 +1,384 @@
+{
+    "config": {
+        "abort": {
+            "reauth_successful": "Berrautortzea arrakastatsua izan da"
+        },
+        "error": {
+            "invalid_auth": "Autentifikazio baliogabea"
+        },
+        "step": {
+            "reauth_user_code": {
+                "data": {
+                    "user_code": "Erabiltzaile-kodea"
+                }
+            },
+            "user": {
+                "data": {
+                    "user_code": "Erabiltzaile-kodea"
+                }
+            }
+        }
+    },
+    "entity": {
+        "binary_sensor": {
+            "pm25": {
+                "name": "PM2.5"
+            },
+            "valve": {
+                "name": "Balbula"
+            },
+            "voc": {
+                "name": "KOL-ak"
+            }
+        },
+        "event": {
+            "numbered_button": {
+                "name": "{button_number} botoia"
+            }
+        },
+        "light": {
+            "backlight": {
+                "name": "Atzeko argia"
+            }
+        },
+        "number": {
+            "alarm_duration": {
+                "name": "Alarma-iraupena"
+            },
+            "sensitivity": {
+                "name": "Sentsibilitatea"
+            },
+            "temperature": {
+                "name": "Tenperatura"
+            },
+            "time": {
+                "name": "Ordua"
+            },
+            "volume": {
+                "name": "Bolumena"
+            }
+        },
+        "select": {
+            "basic_anti_flicker": {
+                "state": {
+                    "0": "Desgaitua"
+                }
+            },
+            "blanket_level": {
+                "name": "Maila",
+                "state": {
+                    "level_1": "Baxua",
+                    "level_10": "Altua",
+                    "level_2": "2. maila",
+                    "level_3": "3. maila",
+                    "level_4": "4. maila",
+                    "level_5": "5. maila",
+                    "level_6": "6. maila",
+                    "level_7": "7. maila",
+                    "level_8": "8. maila",
+                    "level_9": "9. maila"
+                }
+            },
+            "brightness": {
+                "name": "Distira"
+            },
+            "curtain_mode": {
+                "name": "Modua",
+                "state": {
+                    "night": "Gaua"
+                }
+            },
+            "curtain_motor_mode": {
+                "state": {
+                    "back": "Atzera"
+                }
+            },
+            "desk_level": {
+                "name": "Maila",
+                "state": {
+                    "level_1": "1. maila",
+                    "level_2": "2. maila",
+                    "level_3": "3. maila",
+                    "level_4": "4. maila"
+                }
+            },
+            "desk_up_down": {
+                "state": {
+                    "down": "Behera",
+                    "stop": "Gelditu",
+                    "up": "Gora"
+                }
+            },
+            "fingerbot_mode": {
+                "name": "Modua"
+            },
+            "humidifier_level": {
+                "state": {
+                    "level_1": "1. maila",
+                    "level_10": "10. maila",
+                    "level_2": "2. maila",
+                    "level_3": "3. maila",
+                    "level_4": "4. maila",
+                    "level_5": "5. maila",
+                    "level_6": "6. maila",
+                    "level_7": "7. maila",
+                    "level_8": "8. maila",
+                    "level_9": "9. maila"
+                }
+            },
+            "humidifier_spray_mode": {
+                "state": {
+                    "auto": "Automatikoa",
+                    "humidity": "Hezetasuna",
+                    "work": "Lana"
+                }
+            },
+            "indexed_blanket_level": {
+                "name": "{index}. maila",
+                "state": {
+                    "level_1": "Baxua",
+                    "level_10": "Altua",
+                    "level_2": "2. maila",
+                    "level_3": "3. maila",
+                    "level_4": "4. maila",
+                    "level_5": "5. maila",
+                    "level_6": "6. maila",
+                    "level_7": "7. maila",
+                    "level_8": "8. maila",
+                    "level_9": "9. maila"
+                }
+            },
+            "indexed_led_type": {
+                "state": {
+                    "led": "LED"
+                }
+            },
+            "led_type": {
+                "state": {
+                    "led": "LED"
+                }
+            },
+            "mode": {
+                "name": "Modua"
+            },
+            "motion_sensitivity": {
+                "state": {
+                    "0": "Baxua",
+                    "1": "Ertaina",
+                    "2": "Altua"
+                }
+            },
+            "odor_elimination_mode": {
+                "state": {
+                    "smart": "Adimentsua"
+                }
+            },
+            "quick_heat_temperature": {
+                "state": {
+                    "100": "100 \u00b0C",
+                    "80": "80 \u00b0C",
+                    "85": "85 \u00b0C",
+                    "90": "90 \u00b0C",
+                    "95": "95 \u00b0C"
+                }
+            },
+            "siren_mode": {
+                "state": {
+                    "normal": "Normala"
+                }
+            },
+            "target_humidity": {
+                "name": "Helburuko hezetasuna"
+            },
+            "vacuum_cistern": {
+                "state": {
+                    "high": "Altua",
+                    "low": "Baxua"
+                }
+            },
+            "vacuum_mode": {
+                "name": "Modua",
+                "state": {
+                    "smart": "Adimentsua"
+                }
+            },
+            "volume": {
+                "name": "Bolumena"
+            },
+            "weather_delay": {
+                "state": {
+                    "120h": "120 ordu",
+                    "144h": "144 ordu",
+                    "168h": "168 ordu",
+                    "24h": "24 ordu",
+                    "48h": "48 ordu",
+                    "72h": "72 ordu",
+                    "96h": "96 ordu",
+                    "cancel": "Ezeztatu"
+                }
+            }
+        },
+        "sensor": {
+            "air_quality": {
+                "name": "Airearen kalitatea"
+            },
+            "air_quality_index": {
+                "name": "Aire-kalitatearen indizea",
+                "state": {
+                    "level_1": "1. maila",
+                    "level_2": "2. maila",
+                    "level_3": "3. maila",
+                    "level_4": "4. maila",
+                    "level_5": "5. maila",
+                    "level_6": "6. maila"
+                }
+            },
+            "battery_state": {
+                "name": "Bateriaren egoera"
+            },
+            "cat_litter_box_status": {
+                "name": "Egoera"
+            },
+            "current": {
+                "name": "Korrontea"
+            },
+            "flow_temperature": {
+                "name": "Fluxuaren tenperatura"
+            },
+            "gas": {
+                "name": "Gasa"
+            },
+            "humidity": {
+                "name": "Hezetasuna"
+            },
+            "illuminance": {
+                "name": "Argitasuna"
+            },
+            "irrigation_status": {
+                "name": "Egoera",
+                "state": {
+                    "auto": "Automatikoa",
+                    "idle": "Inaktiboa",
+                    "manual": "Eskuzkoa"
+                }
+            },
+            "liquid_state": {
+                "state": {
+                    "lower_alarm": "Baxua",
+                    "normal": "Normala",
+                    "upper_alarm": "Altua"
+                }
+            },
+            "odor_elimination_status": {
+                "name": "Egoera",
+                "state": {
+                    "charging": "Kargatzen"
+                }
+            },
+            "outside_temperature": {
+                "name": "Kanpoko tenperatura"
+            },
+            "pm25": {
+                "name": "PM2.5"
+            },
+            "power": {
+                "name": "Potentzia"
+            },
+            "sous_vide_status": {
+                "name": "Egoera"
+            },
+            "status": {
+                "name": "Egoera"
+            },
+            "temperature": {
+                "name": "Tenperatura"
+            },
+            "uv_index": {
+                "name": "UV indizea"
+            },
+            "voltage": {
+                "name": "Tentsioa"
+            },
+            "water_level_state": {
+                "state": {
+                    "level_1": "Baxua",
+                    "level_2": "Ertaina",
+                    "level_3": "Betea"
+                }
+            }
+        },
+        "switch": {
+            "child_lock": {
+                "name": "Haur-blokeoa"
+            },
+            "frost_protection": {
+                "name": "Izotz-babesa"
+            },
+            "mute": {
+                "name": "Mututu"
+            },
+            "mute_voice": {
+                "name": "Ahotsa mututu"
+            },
+            "power": {
+                "name": "Potentzia"
+            },
+            "pump": {
+                "name": "Ponpa"
+            },
+            "start": {
+                "name": "Hasi"
+            },
+            "water": {
+                "name": "Ura"
+            }
+        },
+        "valve": {
+            "indexed_valve": {
+                "name": "{index} balbula"
+            },
+            "valve": {
+                "name": "Balbula"
+            }
+        }
+    },
+    "selector": {
+        "days_of_week": {
+            "options": {
+                "friday": "Ostirala",
+                "monday": "Astelehena",
+                "saturday": "Larunbata",
+                "sunday": "Igandea",
+                "thursday": "Osteguna",
+                "tuesday": "Asteartea",
+                "wednesday": "Asteazkena"
+            }
+        },
+        "set_feeder_meal_plan": {
+            "fields": {
+                "days": {
+                    "name": "Egunak"
+                },
+                "time": {
+                    "name": "Ordua"
+                }
+            }
+        }
+    },
+    "services": {
+        "get_feeder_meal_plan": {
+            "fields": {
+                "device_id": {
+                    "name": "Gailua"
+                }
+            }
+        },
+        "set_feeder_meal_plan": {
+            "fields": {
+                "device_id": {
+                    "name": "Gailua"
+                }
+            }
+        }
+    }
+}
