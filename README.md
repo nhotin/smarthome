@@ -115,11 +115,14 @@ Tất cả camera được định danh và sắp xếp theo đúng thứ tự l
 
 ---
 
-## 5. Hệ thống lưu trữ 24/7 & Chuẩn đoán dung lượng
+## 5. Hệ thống lưu trữ 24/7 & Cơ chế Ghi đè tự động (FIFO)
 
-- **Dung lượng tiêu thụ trung bình:** ~23 GB / ngày cho toàn bộ 6 camera (stream liên tục chất lượng cao).
-- **Phần cứng lưu trữ:** Ổ cứng Seagate 1TB gắn ngoài mount tại `/mnt/hdd_1tb_seagate/camera_recordings`.
-- **Khả năng lưu trữ tối đa:** ~**37 đến 40 ngày** dữ liệu ghi hình liên tục trước khi cơ chế tự động dọn dẹp (Retention cleanup) xóa các ngày cũ nhất.
+- **Dung lượng tiêu thụ thực tế:** ~**23.54 GB / ngày** cho toàn bộ 6 camera (khoảng 0.98 GB/giờ).
+- **Phần cứng lưu trữ:** Ổ cứng Seagate 1TB gắn ngoài (`/mnt/hdd_1tb_seagate/camera_recordings`).
+- **Cơ chế Ghi đè cuốn chiếu (FIFO Loop Recording):**
+  - Hệ thống đặt thời gian lưu trữ tối đa 365 ngày để tận dụng 100% dung lượng ổ đĩa.
+  - Khi ổ cứng đạt ngưỡng giới hạn (~36 đến 38 ngày ghi liên tục), tiến trình `StorageMaintainer` của Frigate kết hợp script bảo vệ vùng đệm an toàn 20GB (`storage_guard.sh`) sẽ **tự động xóa ngày/giờ cũ nhất để ghi đè ngày/giờ mới nhất vào**.
+  - Người dùng luôn có sẵn dữ liệu của **36 đến 38 ngày gần nhất** mà không bao giờ lo bị tràn ổ hay phải xóa thủ công.
 
 ---
 
