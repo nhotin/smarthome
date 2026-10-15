@@ -186,6 +186,14 @@ cameras:
       width: 640
       height: 360
       fps: 5
+    objects:
+      filters:
+        person:
+          min_area: 12000
+          threshold: 0.70
+          mask:
+            black_board:
+              coordinates: "420,100,560,100,560,320,420,320"
 
   ban_cong:
     friendly_name: "Ban Công"
