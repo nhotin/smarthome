@@ -28,6 +28,7 @@ config/home-assistant_v2.db*
 frigate/config/*.db*
 frigate/config/backup*
 frigate/config/model_cache/
+frigate/config/go2rtc_homekit.yml
 frigate/config/.*
 mosquitto/data/
 mosquitto/log/
