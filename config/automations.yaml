@@ -17,11 +17,16 @@
         {% set cam = trigger.payload_json.after.camera %}
         {% set lbl = trigger.payload_json.after.label %}
         {% set is_night = now().hour >= 23 or now().hour < 5 %}
+        {% set has_person = is_state('binary_sensor.' ~ cam ~ '_person_occupancy', 'on') %}
         {% if cam in ['san_truoc', 'san_sau', 'ban_cong'] %}
-          {{ lbl in ['person', 'dog', 'cat'] }}
+          {% if lbl in ['dog', 'cat'] %}
+            {{ not has_person }}
+          {% else %}
+            {{ lbl == 'person' }}
+          {% endif %}
         {% elif cam in ['cong', 'phong_khach', 'bep'] %}
           {% if lbl in ['dog', 'cat'] %}
-            {{ true }}
+            {{ not has_person }}
           {% elif lbl == 'person' %}
             {{ is_night }}
           {% else %}
