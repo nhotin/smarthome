@@ -111,7 +111,7 @@ Hệ thống quản lý 6 camera giám sát với thứ tự ưu tiên hiển th
 | :---: | :--- | :--- | :---: | :---: | :---: | :--- |
 | **1** | **Cổng** | `cong` | 480 × 544 | 5 | NVDEC (`preset-nvidia-h264`) | Báo xe, người lạ; Nút bấm mở cổng nhanh |
 | **2** | **Sân Trước** | `san_truoc` | 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật đèn sân (18h-6h); Nút bấm mở cổng |
-| **3** | **Phòng Khách** | `phong_khach`| 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật đèn khách (18h-6h); Cảnh báo đêm (23h-5h) |
+| **3** | **Phòng Khách** | `phong_khach`| 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật quạt khách 24/7 khi có người; Bật đèn (18h-6h); Cảnh báo đêm |
 | **4** | **Nhà Bếp** | `bep` | 640 × 720 | 5 | NVDEC (`preset-nvidia-h264`) | Bật đèn bếp 24/7 khi có người; Cảnh báo đêm |
 | **5** | **Sân Sau** | `san_sau` | 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật đèn sân sau 24/7; Giám sát vật nuôi |
 | **6** | **Ban Công** | `ban_cong` | 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật đèn ban công (18h-6h); Giám sát tầng lầu |
@@ -157,16 +157,16 @@ frigate:
 ### 5.1. Đèn thông minh theo sự hiện diện AI (Smart Presence Lighting)
 File cấu hình [config/automations.yaml](file:///home/nhotin/work/home/config/automations.yaml) chứa logic bật/tắt tự động:
 - **Công tắc kích hoạt chung:** `input_boolean.smart_lighting_enabled` (tạo trong `config/configuration.yaml`).
-- **Logic bật đèn (`smart_presence_lighting_turn_on`):**
+- **Logic bật thiết bị (`smart_presence_lighting_turn_on`):**
   - Khi `binary_sensor.<khu_vuc>_person_occupancy` chuyển sang `on`:
     - **Sân Trước**: Bật `switch.san_truoc_switch_1` và `switch.san_truoc_switch_3` nếu trời tối (`sun.sun == below_horizon` hoặc giờ $\ge 18$ hoặc $< 6$).
-    - **Phòng Khách**: Bật `switch.phong_khach_switch_2` nếu trời tối.
+    - **Phòng Khách**: Mở quạt `switch.phong_khach_switch_4` **24/7** khi có người; Đèn `switch.phong_khach_switch_2` chỉ bật khi trời tối.
     - **Ban Công**: Bật `switch.ban_cong_switch_1` nếu trời tối.
-    - **Nhà Bếp**: Bật `switch.nha_bep_switch_2` và `switch.nha_bep_switch_3` bất kể ngày/đêm.
-    - **Sân Sau**: Bật `switch.san_sau_switch_switch_1` bất kể ngày/đêm.
-- **Logic tắt đèn (`smart_presence_lighting_turn_off`):**
+    - **Nhà Bếp**: Bật công tắc chính `switch.nha_bep_switch_2` **24/7** (tự động kích hoạt kịch bản liên kết Tuya cho các switch phụ).
+    - **Sân Sau**: Bật `switch.san_sau_switch_switch_1` **24/7** bất kể ngày/đêm.
+- **Logic tắt thiết bị (`smart_presence_lighting_turn_off`):**
   - Tự động tắt sau **2 phút** không còn người đối với: Sân Trước, Sân Sau, Ban Công.
-  - Tự động tắt sau **5 phút** không còn người đối với: Phòng Khách, Nhà Bếp.
+  - Tự động tắt sau **5 phút** không còn người đối với: Phòng Khách (tắt cả đèn và quạt), Nhà Bếp.
 
 ### 5.2. Điều khiển Cổng thông minh & Thông báo đẩy
 - Khi phát hiện người hoặc xe tại Cổng / Sân Trước:
