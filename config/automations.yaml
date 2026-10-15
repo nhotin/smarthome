@@ -188,10 +188,12 @@
               value_template: "{{ trigger.entity_id == 'binary_sensor.bep_person_occupancy' }}"
           sequence:
             - service: switch.turn_on
+              continue_on_error: true
               target:
                 entity_id:
                   - switch.nha_bep_switch_2
                   - switch.nha_bep_switch_3
+                  - switch.led_da_bep_switch_switch_1
 
         # Sân Sau: BẬT CẢ NGÀY LẪN ĐÊM (24/7 cứ có người là bật)
         - conditions:
@@ -269,10 +271,12 @@
               value_template: "{{ trigger.entity_id == 'binary_sensor.bep_person_occupancy' }}"
           sequence:
             - service: switch.turn_off
+              continue_on_error: true
               target:
                 entity_id:
                   - switch.nha_bep_switch_2
                   - switch.nha_bep_switch_3
+                  - switch.led_da_bep_switch_switch_1
         - conditions:
             - condition: template
               value_template: "{{ trigger.entity_id == 'binary_sensor.ban_cong_person_occupancy' }}"
