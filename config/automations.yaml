@@ -1,6 +1,6 @@
 - id: 'frigate_detection_notification'
   alias: 'Camera AI - Thông báo phát hiện đối tượng về điện thoại'
-  description: 'Gửi thông báo có snapshot và nút bấm về điện thoại Pixel khi có Người hoặc Chó/Mèo. Lọc thông minh: Cổng có 2 nút Mở/Đóng cổng và 1 cánh (không icon), Khách & Bếp chỉ báo Người ban đêm.'
+  description: 'Gửi thông báo có snapshot và nút bấm về điện thoại Pixel khi có Người hoặc Con vật. Sân Trước/Sau/Ban công báo Người 24/7. Cổng/Khách/Bếp chỉ báo Người ban đêm (23h-5h). Chó/Mèo gộp thành Con vật.'
   trigger:
     - platform: mqtt
       topic: frigate/events
@@ -17,11 +17,9 @@
         {% set cam = trigger.payload_json.after.camera %}
         {% set lbl = trigger.payload_json.after.label %}
         {% set is_night = now().hour >= 23 or now().hour < 5 %}
-        {% if cam == 'cong' %}
+        {% if cam in ['san_truoc', 'san_sau', 'ban_cong'] %}
           {{ lbl in ['person', 'dog', 'cat'] }}
-        {% elif cam in ['san_truoc', 'san_sau', 'ban_cong'] %}
-          {{ lbl in ['person', 'dog', 'cat'] }}
-        {% elif cam in ['phong_khach', 'bep'] %}
+        {% elif cam in ['cong', 'phong_khach', 'bep'] %}
           {% if lbl in ['dog', 'cat'] %}
             {{ true }}
           {% elif lbl == 'person' %}
@@ -49,8 +47,8 @@
           car: "Ô tô 🚗"
           motorcycle: "Xe máy 🏍️"
           bicycle: "Xe đạp 🚲"
-          dog: "Chó 🐕"
-          cat: "Mèo 🐈"
+          dog: "Con vật 🐾"
+          cat: "Con vật 🐾"
         cam_name: "{{ camera_map.get(camera, camera) }}"
         lbl_name: "{{ label_map.get(label, label) }}"
     - choose:
@@ -66,7 +64,7 @@
                   tag: "{{ event_id }}"
                   alert_once: true
                   image: "/api/frigate/notifications/{{ event_id }}/snapshot.jpg"
-                  clickAction: "/frigate/"
+                  clickAction: "/frigate-nvr"
                   channel: "Camera_Alerts"
                   actions:
                     - action: "URI"
@@ -75,7 +73,7 @@
                     - action: "TOGGLE_MAIN_GATE"
                       title: "Mở/Đóng cổng"
                     - action: "TOGGLE_SUB_GATE"
-                      title: "Mở/Đóng 1 cánh"
+                      title: "Mở 1 cánh"
       default:
         - service: notify.mobile_app_pixel_10_pro_xl
           data:
@@ -85,7 +83,7 @@
               tag: "{{ event_id }}"
               alert_once: true
               image: "/api/frigate/notifications/{{ event_id }}/snapshot.jpg"
-              clickAction: "/frigate/"
+              clickAction: "/frigate-nvr"
               channel: "Camera_Alerts"
               actions:
                 - action: "URI"
@@ -93,13 +91,13 @@
                   uri: "/api/frigate/notifications/{{ event_id }}/clip.mp4"
                 - action: "URI"
                   title: "Trực tiếp"
-                  uri: "/frigate/"
+                  uri: "/frigate-nvr"
   mode: parallel
   max: 10
 
 - id: 'frigate_notification_action_toggle_main_gate'
   alias: 'Camera AI - Mở hoặc Đóng toàn bộ cổng từ thông báo'
-  description: 'Bật công tắc xung 0.5s main_gate khi nhấn nút Mở/Đóng cổng'
+  description: 'Kích hoạt công tắc cổng Tuya switch.cong_switch_switch_1 khi nhấn nút Mở/Đóng cổng'
   trigger:
     - platform: event
       event_type: mobile_app_notification_action
@@ -108,29 +106,179 @@
   action:
     - service: switch.turn_on
       target:
-        entity_id: switch.main_gate
+        entity_id: switch.cong_switch_switch_1
+    - delay:
+        seconds: 1
+    - service: switch.turn_off
+      target:
+        entity_id: switch.cong_switch_switch_1
     - service: notify.mobile_app_pixel_10_pro_xl
       data:
-        message: "Đã kích hoạt: Mở/Đóng toàn bộ cổng chính"
+        message: "Đã kích hoạt: Mở/Đóng toàn bộ cổng qua Tuya"
         data:
           tag: "gate_status"
   mode: single
 
 - id: 'frigate_notification_action_toggle_sub_gate'
-  alias: 'Camera AI - Mở hoặc Đóng 1 cánh cổng từ thông báo'
-  description: 'Bật công tắc xung 0.5s sub_gate khi nhấn nút Mở/Đóng 1 cánh'
+  alias: 'Camera AI - Mở 1 cánh cổng từ thông báo'
+  description: 'Kích hoạt scene mở 1 cánh cổng Tuya scene.mo_1_cong khi nhấn nút Mở 1 cánh'
   trigger:
     - platform: event
       event_type: mobile_app_notification_action
       event_data:
         action: TOGGLE_SUB_GATE
   action:
-    - service: switch.turn_on
+    - service: scene.turn_on
       target:
-        entity_id: switch.sub_gate
+        entity_id: scene.mo_1_cong
     - service: notify.mobile_app_pixel_10_pro_xl
       data:
-        message: "Đã kích hoạt: Mở/Đóng 1 cánh cổng"
+        message: "Đã kích hoạt: Mở 1 cánh cổng (Cổng phụ) qua Tuya"
         data:
           tag: "gate_status"
   mode: single
+
+- id: 'smart_presence_lighting_turn_on'
+  alias: 'Đèn Thông Minh AI - Tự động Bật Đèn khi có Người'
+  description: 'Tự động bật đèn khi có người: Cổng, Sân Trước, Phòng Khách chỉ bật sau hoàng hôn/ban đêm; Nhà Bếp, Sân Sau, Ban Công bật cả ngày lẫn đêm.'
+  trigger:
+    - platform: state
+      entity_id:
+        - binary_sensor.san_truoc_person_occupancy
+        - binary_sensor.san_sau_person_occupancy
+        - binary_sensor.phong_khach_person_occupancy
+        - binary_sensor.bep_person_occupancy
+        - binary_sensor.ban_cong_person_occupancy
+      to: 'on'
+  condition:
+    - condition: state
+      entity_id: input_boolean.smart_lighting_enabled
+      state: 'on'
+  action:
+    - choose:
+        # Sân Trước: Chỉ bật sau hoàng hôn / ban đêm
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.entity_id == 'binary_sensor.san_truoc_person_occupancy' }}"
+            - condition: template
+              value_template: >-
+                {{ is_state('sun.sun', 'below_horizon') or now().hour >= 18 or now().hour < 6 }}
+          sequence:
+            - service: switch.turn_on
+              target:
+                entity_id:
+                  - switch.san_truoc_switch_1
+                  - switch.san_truoc_switch_3
+
+        # Phòng Khách: Chỉ bật sau hoàng hôn / ban đêm
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.entity_id == 'binary_sensor.phong_khach_person_occupancy' }}"
+            - condition: template
+              value_template: >-
+                {{ is_state('sun.sun', 'below_horizon') or now().hour >= 18 or now().hour < 6 }}
+          sequence:
+            - service: switch.turn_on
+              target:
+                entity_id: switch.phong_khach_switch_2
+
+        # Nhà Bếp: BẬT CẢ NGÀY LẪN ĐÊM (24/7 cứ có người là bật)
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.entity_id == 'binary_sensor.bep_person_occupancy' }}"
+          sequence:
+            - service: switch.turn_on
+              target:
+                entity_id:
+                  - switch.nha_bep_switch_2
+                  - switch.nha_bep_switch_3
+
+        # Sân Sau: BẬT CẢ NGÀY LẪN ĐÊM (24/7 cứ có người là bật)
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.entity_id == 'binary_sensor.san_sau_person_occupancy' }}"
+          sequence:
+            - service: switch.turn_on
+              target:
+                entity_id: switch.san_sau_switch_switch_1
+
+        # Ban Công: Chỉ bật sau hoàng hôn / ban đêm
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.entity_id == 'binary_sensor.ban_cong_person_occupancy' }}"
+            - condition: template
+              value_template: >-
+                {{ is_state('sun.sun', 'below_horizon') or now().hour >= 18 or now().hour < 6 }}
+          sequence:
+            - service: switch.turn_on
+              target:
+                entity_id: switch.ban_cong_switch_1
+  mode: parallel
+  max: 10
+
+- id: 'smart_presence_lighting_turn_off'
+  alias: 'Đèn Thông Minh AI - Tự động Tắt Đèn khi Người rời đi'
+  description: 'Tự động tắt đèn sau khi không còn người trong khu vực'
+  trigger:
+    - platform: state
+      entity_id:
+        - binary_sensor.san_truoc_person_occupancy
+        - binary_sensor.san_sau_person_occupancy
+        - binary_sensor.ban_cong_person_occupancy
+      to: 'off'
+      for:
+        minutes: 2
+    - platform: state
+      entity_id:
+        - binary_sensor.phong_khach_person_occupancy
+        - binary_sensor.bep_person_occupancy
+      to: 'off'
+      for:
+        minutes: 5
+  condition:
+    - condition: state
+      entity_id: input_boolean.smart_lighting_enabled
+      state: 'on'
+  action:
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.entity_id == 'binary_sensor.san_truoc_person_occupancy' }}"
+          sequence:
+            - service: switch.turn_off
+              target:
+                entity_id:
+                  - switch.san_truoc_switch_1
+                  - switch.san_truoc_switch_3
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.entity_id == 'binary_sensor.san_sau_person_occupancy' }}"
+          sequence:
+            - service: switch.turn_off
+              target:
+                entity_id: switch.san_sau_switch_switch_1
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.entity_id == 'binary_sensor.phong_khach_person_occupancy' }}"
+          sequence:
+            - service: switch.turn_off
+              target:
+                entity_id: switch.phong_khach_switch_2
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.entity_id == 'binary_sensor.bep_person_occupancy' }}"
+          sequence:
+            - service: switch.turn_off
+              target:
+                entity_id:
+                  - switch.nha_bep_switch_2
+                  - switch.nha_bep_switch_3
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.entity_id == 'binary_sensor.ban_cong_person_occupancy' }}"
+          sequence:
+            - service: switch.turn_off
+              target:
+                entity_id: switch.ban_cong_switch_1
+  mode: parallel
+  max: 10

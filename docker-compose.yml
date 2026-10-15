@@ -25,14 +25,21 @@ services:
 
   frigate:
     container_name: frigate
-    privileged: true
     restart: unless-stopped
-    image: ghcr.io/blakeblackshear/frigate:stable
+    image: ghcr.io/blakeblackshear/frigate:stable-tensorrt
     shm_size: "512mb"
     network_mode: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [gpu]
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./frigate/config:/config
+      - ./frigate/detection_runners.py:/opt/frigate/frigate/detectors/detection_runners.py:ro
       - ./scripts:/scripts:ro
       - ${RECORDINGS_PATH:-/mnt/hdd_1tb_seagate/camera_recordings}:/media/frigate
       - type: tmpfs
@@ -42,3 +49,6 @@ services:
     environment:
       - FRIGATE_RTSP_PASSWORD=${FRIGATE_RTSP_PASSWORD:-password}
       - GO2RTC_ALLOW_ARBITRARY_EXEC=true
+      - NVIDIA_VISIBLE_DEVICES=1
+      - NVIDIA_DRIVER_CAPABILITIES=all
+

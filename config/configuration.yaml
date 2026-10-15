@@ -26,6 +26,19 @@ http:
 logger:
   default: info
 
+recorder:
+  commit_interval: 10
+  purge_keep_days: 7
+  auto_purge: true
+  exclude:
+    domains:
+      - camera
+      - media_player
+      - weblink
+      - updater
 
-
-
+input_boolean:
+  smart_lighting_enabled:
+    name: "Tự động bật đèn thông minh"
+    icon: mdi:lightbulb-auto
+    initial: on

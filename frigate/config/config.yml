@@ -5,11 +5,25 @@ mqtt:
 database:
   path: /config/frigate.db
 
-# ─── Detector AI ────────────────────────────────────────────────────────────
+# ─── FFmpeg Hardware Acceleration (NVIDIA NVDEC / CUDA on RTX 3060) ──────────
+ffmpeg:
+  hwaccel_args: preset-nvidia-h264
+
+# ─── Model Config (YOLOv8s 640x640 SOTA on RTX 3060 CUDA) ───────────────────
+model:
+  path: /config/model_cache/yolov8s.onnx
+  width: 640
+  height: 640
+  input_tensor: nchw
+  input_pixel_format: rgb
+  input_dtype: float
+  model_type: yolo-generic
+
+# ─── Detector AI (ONNX CUDA on RTX 3060) ────────────────────────────────────
 detectors:
-  cpu:
-    type: cpu
-    num_threads: 2
+  onnx:
+    type: onnx
+    device: AUTO
 
 # ─── Phát hiện đối tượng & con vật ──────────────────────────────────────────
 detect:
@@ -25,6 +39,9 @@ objects:
     - dog
     - cat
   filters:
+    person:
+      min_score: 0.45
+      threshold: 0.60
     dog:
       min_score: 0.45
       threshold: 0.60
@@ -45,27 +62,27 @@ review:
       - cat
       - bicycle
 
-# ─── Ghi hình liên tục 24/7 (Ghi đè cuốn chiếu tự động khi đầy ổ cứng) ────────
+# ─── Ghi hình liên tục 24/7 (Lưu trữ 30 ngày an toàn cho ổ cứng 1TB) ────────
 record:
   enabled: true
   continuous:
-    days: 365
+    days: 30
   motion:
-    days: 365
+    days: 30
   alerts:
     retain:
-      days: 365
+      days: 30
       mode: motion
   detections:
     retain:
-      days: 365
+      days: 30
       mode: motion
 
 # ─── Ảnh chụp sự kiện ────────────────────────────────────────────────────────
 snapshots:
   enabled: true
   retain:
-    default: 365
+    default: 30
 
 # ─── go2rtc: lấy RTSP stream từ Tuya qua HA API ─────────────────────────────
 go2rtc:
@@ -92,7 +109,7 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/cong
-          input_args: preset-rtsp-restream
+          input_args: preset-rtsp-generic
           roles:
             - record
             - detect
@@ -109,7 +126,7 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/san_truoc
-          input_args: preset-rtsp-restream
+          input_args: preset-rtsp-generic
           roles:
             - record
             - detect
@@ -126,7 +143,7 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/phong_khach
-          input_args: preset-rtsp-restream
+          input_args: preset-rtsp-generic
           roles:
             - record
             - detect
@@ -143,7 +160,7 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/bep
-          input_args: preset-rtsp-restream
+          input_args: preset-rtsp-generic
           roles:
             - record
             - detect
@@ -160,7 +177,7 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/san_sau
-          input_args: preset-rtsp-restream
+          input_args: preset-rtsp-generic
           roles:
             - record
             - detect
@@ -177,7 +194,7 @@ cameras:
     ffmpeg:
       inputs:
         - path: rtsp://127.0.0.1:8554/ban_cong
-          input_args: preset-rtsp-restream
+          input_args: preset-rtsp-generic
           roles:
             - record
             - detect

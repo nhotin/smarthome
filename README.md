@@ -1,175 +1,266 @@
-# 🏠 Smart Home & Frigate AI NVR System
+# 🏠 Smart Home & Frigate AI NVR System (Dual-GPU RTX Architecture)
 
-Hệ sinh thái nhà thông minh toàn diện tích hợp **Home Assistant**, **Frigate NVR** (AI Object Detection), **Mosquitto MQTT Broker**, **Tuya Cloud Camera Stream Bridge**, và hệ thống điều khiển cổng tự động **Sonoff eWeLink**.
+Hệ sinh thái nhà thông minh và giám sát an ninh toàn diện tích hợp **Home Assistant Core**, **Frigate NVR 0.18** (AI Vision Object Detection với **YOLOv8s ONNX CUDA**), **Mosquitto MQTT Broker**, **Tuya Cloud Camera Stream Bridge**, và hệ thống điều khiển tự động hóa đèn & cổng thông minh.
 
 ---
 
 ## 📑 Mục lục
 - [1. Tính năng nổi bật](#1-tính-năng-nổi-bật)
-- [2. Kiến trúc hệ thống](#2-kiến-trúc-hệ-thống)
-- [3. Cấu hình Camera & Thứ tự hiển thị](#3-cấu-hình-camera--thứ-tự-hiển-thị)
-- [4. Cơ chế thông báo & Điều khiển cổng thông minh](#4-cơ-chế-thông-báo--điều-khiển-cổng-thông-minh)
-- [5. Hệ thống lưu trữ 24/7 & Chuẩn đoán dung lượng](#5-hệ-thống-lưu-trữ-247--chuẩn-đoán-dung-lượng)
-- [6. Hướng dẫn cài đặt & Triển khai](#6-hướng-dẫn-cài-đặt--triển-khai)
-- [7. Bảo mật & Quản lý thông tin nhạy cảm](#7-bảo-mật--quản-lý-thông-tin-nhạy-cảm)
+- [2. Kiến trúc hệ thống Dual-GPU](#2-kiến-trúc-hệ-thống-dual-gpu)
+- [3. Cấu hình Camera & Luồng dữ liệu](#3-cấu-hình-camera--luồng-dữ-liệu)
+- [4. Mô hình AI YOLOv8s & Tối ưu GPU](#4-mô-hình-ai-yolov8s--tối-ưu-gpu)
+- [5. Hệ thống Tự động hóa Thông minh (Automations)](#5-hệ-thống-tự-động-hóa-thông-minh-automations)
+  - [5.1. Đèn thông minh theo sự hiện diện AI (Smart Presence Lighting)](#51-đèn-thông-minh-theo-sự-hiện-diện-ai-smart-presence-lighting)
+  - [5.2. Điều khiển Cổng thông minh & Thông báo đẩy](#52-điều-khiển-cổng-thông-minh--thông-báo-đẩy)
+- [6. Lưu trữ 24/7 & Cơ chế cuốn chiếu an toàn](#6-lưu-trữ-247--cơ-chế-cuốn-chiếu-an-toàn)
+- [7. Hướng dẫn Cài đặt & Triển khai](#7-hướng-dẫn-cài-đặt--triển-khai)
+- [8. Quản lý Vận hành & Lệnh hữu ích](#8-quản-lý-vận-hành--lệnh-hữu-ích)
+- [9. Bảo mật & Biến môi trường](#9-bảo-mật--biến-môi-trường)
 
 ---
 
 ## 1. Tính năng nổi bật
 
-- 🎥 **Hệ thống giám sát 6 Camera AI 24/7:**
-  - Phát hiện thông minh: Người (`person`), Ô tô (`car`), Xe máy (`motorcycle`), Xe đạp (`bicycle`), Chó (`dog`), Mèo (`cat`).
-  - Lọc nhiễu thông minh (bỏ qua chim muông / bóng nắng rung động cây cối).
-- 🚪 **Tích hợp Cổng tự động Sonoff:**
-  - Điều khiển 2 cánh (`switch.main_gate`) và 1 cánh (`switch.sub_gate`).
-  - Phần cứng đã được nạp sẵn chế độ xung 0.5s (Inching mode) qua eWeLink, Home Assistant gửi lệnh bật tức thì mà không cần cài đặt delay phức tạp.
-- 📲 **Thông báo đẩy thông minh (Rich Push Notifications):**
-  - Gửi ảnh snapshot kèm thông báo tức thì lên điện thoại (Pixel 10 Pro XL).
-  - Tích hợp các nút hành động trực tiếp: `Xem clip`, `Mở/Đóng cổng`, `Mở/Đóng 1 cánh`.
-  - Phân luồng thời gian: Chỉ cảnh báo người trong nhà (Khách, Bếp) từ 23h đêm đến 5h sáng; cảnh báo động vật (chó/mèo) 24/7.
-- 🗣️ **Giọng đọc tự nhiên (Edge TTS):**
-  - Giọng đọc thần kinh tiếng Việt chuẩn (`vi-VN-HoaiMyNeural` & `vi-VN-NamMinhNeural`).
-- 👥 **Phân quyền người dùng ngang hàng:**
-  - Hệ thống hỗ trợ nhiều tài khoản Quản trị viên (Administrator) cho gia đình (Chủ nhà & Vợ) với đầy đủ quyền cấu hình, xem camera và định vị sự hiện diện (`Person`).
+- 🚀 **Kiến trúc Dual-GPU độc lập:**
+  - Toàn bộ tác vụ giải mã video phần cứng (NVDEC) và suy luận AI (CUDA) được dồn sang card **NVIDIA GeForce RTX 3060 (12GB VRAM - GPU 1)**.
+  - Card chính **RTX 5060 Ti (GPU 0)** được cách ly hoàn toàn, không bị chiếm dụng VRAM/CUDA core, sẵn sàng cho công việc render, đồ họa và AI LLM.
+- 🧠 **AI Vision Object Detection với YOLOv8s ONNX:**
+  - Nhận diện độ phân giải cao $640\times 640$, tensor định dạng `nchw`.
+  - Tốc độ xử lý siêu tốc: **~11.0 ms / frame** trên ONNX CUDAExecutionProvider.
+  - Phân loại chính xác tuyệt đối: Người (`person`), Ô tô (`car`), Xe máy (`motorcycle`), Xe đạp (`bicycle`), Chó (`dog`), Mèo (`cat`). Khắc phục triệt để lỗi phân loại nhầm người thành xe đạp của các model cũ.
+- 💡 **Tự động hóa Đèn Thông minh theo AI Presence:**
+  - Tự động bật đèn khi phát hiện người và tự tắt sau thời gian không còn chuyển động.
+  - Phân vùng logic theo ngữ cảnh:
+    - **Sân Trước, Phòng Khách, Ban Công**: Chỉ tự động bật khi trời tối (sau hoàng hôn / ban đêm từ 18:00 đến 06:00).
+    - **Nhà Bếp, Sân Sau**: Tự động bật 24/7 mỗi khi có người bước vào.
+  - Công tắc tổng `input_boolean.smart_lighting_enabled` cho phép bật/tắt toàn bộ tính năng đèn tự động chỉ với 1 chạm.
+- 🚪 **Tích hợp Điều khiển Cổng thông minh:**
+  - Điều khiển mở/đóng toàn bộ cổng qua switch Tuya (`switch.cong_switch_switch_1`) và mở 1 cánh qua scene Tuya (`scene.mo_1_cong`).
+  - Tương thích các nút thao tác nhanh trực tiếp trên thông báo đẩy điện thoại.
+- 📲 **Rich Push Notifications (Pixel 10 Pro XL):**
+  - Gửi snapshot chất lượng cao kèm clip xem lại ngay khi phát hiện người/vật lạ.
+  - Chế độ an ninh ban đêm thông minh cho phòng khách & nhà bếp (23:00 - 05:00).
 
 ---
 
-## 2. Kiến trúc hệ thống
+## 2. Kiến trúc hệ thống Dual-GPU
 
 ```mermaid
 flowchart TD
-    subgraph IoT_Devices ["Thiết bị ngoại vi"]
-        CAMS["6 Camera IP Tuya\n(Cổng, Sân, Khách, Bếp, Sau, Ban công)"]
-        GATE["Cổng tự động\n(Công tắc Sonoff eWeLink - Xung 0.5s)"]
-        MOBILE["Smartphone App\n(Pixel 10 Pro XL)"]
+    subgraph Cameras ["6 Camera Tuya RTSP Cloud"]
+        C1["Cổng (cong)"]
+        C2["Sân Trước (san_truoc)"]
+        C3["Phòng Khách (phong_khach)"]
+        C4["Nhà Bếp (bep)"]
+        C5["Sân Sau (san_sau)"]
+        C6["Ban Công (ban_cong)"]
     end
 
-    subgraph Docker_Stack ["Docker Compose Services"]
-        subgraph Bridge ["Tuya Stream Bridge"]
-            SCRIPT["tuya_stream.sh\n(Dynamic RTSP Token Fetch)"]
+    subgraph Host ["Máy chủ Linux (Dual NVIDIA GPUs)"]
+        subgraph GPU0 ["GPU 0: NVIDIA RTX 5060 Ti"]
+            APP_DESKTOP["Tác vụ Desktop / Gaming / LLM (Độc lập 100%)"]
         end
 
-        subgraph NVR ["Frigate NVR 0.18 + go2rtc"]
-            GO2RTC["go2rtc Restream"]
-            DETECTOR["AI Object Detector\n(CPU Delegate / TensorFlow Lite)"]
-            RECORDER["Continuous 24/7 Recording Engine"]
+        subgraph GPU1 ["GPU 1: NVIDIA RTX 3060 (12GB VRAM)"]
+            NVDEC["6x Hardware Decoders (NVDEC H.264)"]
+            CUDA_AI["YOLOv8s ONNX CUDA Runtime (~11ms/frame)"]
         end
 
-        MQTT["Mosquitto MQTT Broker\n(Port 1883)"]
+        subgraph Docker_Stack ["Docker Compose Environment"]
+            BRIDGE["tuya_stream.sh Bridge (Auto RTSPS Token Refresh)"]
+            
+            subgraph Frigate ["Frigate 0.18 + go2rtc"]
+                GO2RTC["go2rtc Re-streamer (Port 8554 / 1984)"]
+                RECORDER["Continuous 24/7 Recorder Engine"]
+                RUNNER["Vá CudaGraph: detection_runners.py"]
+            end
 
-        subgraph HA ["Home Assistant Core"]
-            AUTOMATIONS["Automations & Alert Engine"]
-            TTS["Edge TTS Engine (vi-VN)"]
-            LOVELACE["Dashboard & Frigate NVR Iframe"]
-            PERSON["Presence & Multi-User Admin"]
+            MQTT["Eclipse Mosquitto (Port 1883)"]
+
+            subgraph HA ["Home Assistant Core"]
+                AUTOMATIONS["AI Presence & Lighting Automation"]
+                GATE_CTRL["Tuya Gate & Scene Controller"]
+                NOTIFY["Push Notification Engine"]
+                DASHBOARD["Lovelace + Advanced Camera Card"]
+            end
         end
+
+        HDD[("HDD Seagate 1TB\n/mnt/hdd_1tb_seagate/camera_recordings")]
     end
 
-    subgraph Storage ["Lưu trữ vật lý"]
-        HDD["Ổ cứng Seagate 1TB\n(/media/cameras)"]
-    end
-
-    CAMS -->|RTSP Cloud Stream| SCRIPT
-    SCRIPT --> GO2RTC
-    GO2RTC --> DETECTOR
-    GO2RTC --> RECORDER
+    Cameras -->|RTSPS Cloud| BRIDGE
+    BRIDGE -->|H.264 Stream| GO2RTC
+    GO2RTC --> NVDEC
+    NVDEC --> CUDA_AI
+    NVDEC --> RECORDER
     RECORDER --> HDD
 
-    DETECTOR -->|MQTT Events| MQTT
+    CUDA_AI -->|MQTT Events| MQTT
     MQTT --> AUTOMATIONS
-    AUTOMATIONS -->|Push Notification + Actions| MOBILE
-    MOBILE -->|Lệnh Mở/Đóng cổng| AUTOMATIONS
-    AUTOMATIONS -->|eWeLink API| GATE
+    AUTOMATIONS -->|Điều khiển đèn/cổng| HA
+    HA -->|Rich Alerts & Action Buttons| NOTIFY
 ```
 
 ---
 
-## 3. Cấu hình Camera & Thứ tự hiển thị
+## 3. Cấu hình Camera & Luồng dữ liệu
 
-Tất cả camera được định danh và sắp xếp theo đúng thứ tự logic sinh hoạt thông qua thuộc tính `ui.order`:
+Hệ thống quản lý 6 camera giám sát với thứ tự ưu tiên hiển thị (`ui.order`) tối ưu cho trải nghiệm người dùng:
 
-| Thứ tự | Tên hiển thị | ID Camera | Độ phân giải | FPS Detect | Ghi chú |
-| :---: | :--- | :--- | :---: | :---: | :--- |
-| **1** | **Cổng** | `cong` | 480 × 544 | 5 | Kèm nút bấm mở cổng trên thông báo |
-| **2** | **Sân Trước** | `san_truoc` | 640 × 360 | 5 | Kèm nút bấm mở cổng trên thông báo |
-| **3** | **Phòng Khách** | `phong_khach`| 640 × 360 | 5 | Cảnh báo người ban đêm (23h-5h), chó/mèo 24/7 |
-| **4** | **Nhà Bếp** | `bep` | 640 × 720 | 5 | Cảnh báo người ban đêm (23h-5h), chó/mèo 24/7 |
-| **5** | **Sân Sau** | `san_sau` | 640 × 360 | 5 | Phát hiện chuyển động & vật nuôi |
-| **6** | **Ban Công** | `ban_cong` | 640 × 360 | 5 | Giám sát không gian mở tầng lầu |
-
----
-
-## 4. Cơ chế thông báo & Điều khiển cổng thông minh
-
-### Kịch bản tự động hóa (`automations.yaml`):
-1. **Camera Cổng & Sân Trước:**
-   - Khi phát hiện có người/xe, hệ thống chụp ảnh gửi ngay vào điện thoại.
-   - Kèm 3 nút bấm thao tác nhanh:
-     - `Xem clip`: Mở trực tiếp đoạn video clip xem lại trên Frigate.
-     - `Mở/Đóng cổng`: Kích hoạt công tắc cổng 2 cánh (`switch.main_gate`).
-     - `Mở/Đóng 1 cánh`: Kích hoạt công tắc cổng 1 cánh (`switch.sub_gate`).
-2. **Camera Phòng Khách & Bếp:**
-   - Ban ngày: Không báo người để tránh làm phiền khi cả nhà sinh hoạt.
-   - Ban đêm (23:00 - 05:00): Tự động bật chế độ an ninh, phát hiện người lạ đột nhập là gửi cảnh báo tức thì.
-   - Vật nuôi (Chó/Mèo): Theo dõi 24/7.
+| Thứ tự | Tên hiển thị | Mã Camera | Độ phân giải | FPS Detect | Hardware Accel | Hành vi tự động hóa |
+| :---: | :--- | :--- | :---: | :---: | :---: | :--- |
+| **1** | **Cổng** | `cong` | 480 × 544 | 5 | NVDEC (`preset-nvidia-h264`) | Báo xe, người lạ; Nút bấm mở cổng nhanh |
+| **2** | **Sân Trước** | `san_truoc` | 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật đèn sân (18h-6h); Nút bấm mở cổng |
+| **3** | **Phòng Khách** | `phong_khach`| 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật đèn khách (18h-6h); Cảnh báo đêm (23h-5h) |
+| **4** | **Nhà Bếp** | `bep` | 640 × 720 | 5 | NVDEC (`preset-nvidia-h264`) | Bật đèn bếp 24/7 khi có người; Cảnh báo đêm |
+| **5** | **Sân Sau** | `san_sau` | 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật đèn sân sau 24/7; Giám sát vật nuôi |
+| **6** | **Ban Công** | `ban_cong` | 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật đèn ban công (18h-6h); Giám sát tầng lầu |
 
 ---
 
-## 5. Hệ thống lưu trữ 24/7 & Cơ chế Ghi đè tự động (FIFO)
+## 4. Mô hình AI YOLOv8s & Tối ưu GPU
 
-- **Dung lượng tiêu thụ thực tế:** ~**23.54 GB / ngày** cho toàn bộ 6 camera (khoảng 0.98 GB/giờ).
-- **Phần cứng lưu trữ:** Ổ cứng Seagate 1TB gắn ngoài (`/mnt/hdd_1tb_seagate/camera_recordings`).
-- **Cơ chế Ghi đè cuốn chiếu (FIFO Loop Recording):**
-  - Hệ thống đặt thời gian lưu trữ tối đa 365 ngày để tận dụng 100% dung lượng ổ đĩa.
-  - Khi ổ cứng đạt ngưỡng giới hạn (~36 đến 38 ngày ghi liên tục), tiến trình `StorageMaintainer` của Frigate kết hợp script bảo vệ vùng đệm an toàn 20GB (`storage_guard.sh`) sẽ **tự động xóa ngày/giờ cũ nhất để ghi đè ngày/giờ mới nhất vào**.
-  - Người dùng luôn có sẵn dữ liệu của **36 đến 38 ngày gần nhất** mà không bao giờ lo bị tràn ổ hay phải xóa thủ công.
+### 4.1. Thông số mô hình AI
+- **Kiến trúc:** YOLOv8 Small (`yolov8s.onnx`)
+- **Kích thước đầu vào:** $640 \times 640 \times 3$ (định dạng `nchw`, `rgb`, kiểu dữ liệu `float32`).
+- **Phân loại Frigate:** `model_type: yolo-generic`.
+- **Detector:** `type: onnx` trên `CUDAExecutionProvider`.
+- **Tốc độ:** **11.0 - 11.8 ms / inference** (so với 45-60 ms của CPU).
+
+### 4.2. File vá tương thích CUDA Graph Runner
+Frigate phiên bản 0.18 tự động bật tính năng `CudaGraphRunner` cho các mô hình YOLO generic. Tuy nhiên, các mô hình ONNX xuất từ Ultralytics chứa các toán tử shape động khiến CUDA Graph Capture báo lỗi.
+- Giải pháp: File [frigate/detection_runners.py](file:///home/nhotin/work/home/frigate/detection_runners.py) được gắn (volume mount) đè lên `/opt/frigate/frigate/detectors/detection_runners.py`.
+- Tác dụng: Bỏ qua ép buộc CUDA Graph đối với `yolo-generic` để fallback an toàn sang `ONNXModelRunner` trên nền CUDA, giữ tốc độ tối đa ~11ms mà không gây crash container.
+
+### 4.3. Cách ly GPU trong Docker Compose
+Tránh sử dụng cờ `privileged: true` vì cờ này tự động phơi bày toàn bộ các card đồ họa của máy chủ vào container. Cấu hình chuẩn xác trong `docker-compose.yml`:
+```yaml
+frigate:
+  image: ghcr.io/blakeblackshear/frigate:stable-tensorrt
+  network_mode: host
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            device_ids: ['1'] # Chỉ cấp phát duy nhất GPU 1 (RTX 3060)
+            capabilities: [gpu]
+  environment:
+    - NVIDIA_VISIBLE_DEVICES=1
+    - NVIDIA_DRIVER_CAPABILITIES=all
+```
 
 ---
 
-## 6. Hướng dẫn cài đặt & Triển khai
+## 5. Hệ thống Tự động hóa Thông minh (Automations)
 
-### 6.1. Yêu cầu hệ thống
-- Hệ điều hành: Linux (Ubuntu / Debian khuyến nghị).
-- Đã cài đặt Docker và Docker Compose Plugin.
-- Kết nối mạng nội bộ giữa server, camera và công tắc Sonoff.
+### 5.1. Đèn thông minh theo sự hiện diện AI (Smart Presence Lighting)
+File cấu hình [config/automations.yaml](file:///home/nhotin/work/home/config/automations.yaml) chứa logic bật/tắt tự động:
+- **Công tắc kích hoạt chung:** `input_boolean.smart_lighting_enabled` (tạo trong `config/configuration.yaml`).
+- **Logic bật đèn (`smart_presence_lighting_turn_on`):**
+  - Khi `binary_sensor.<khu_vuc>_person_occupancy` chuyển sang `on`:
+    - **Sân Trước**: Bật `switch.san_truoc_switch_1` và `switch.san_truoc_switch_3` nếu trời tối (`sun.sun == below_horizon` hoặc giờ $\ge 18$ hoặc $< 6$).
+    - **Phòng Khách**: Bật `switch.phong_khach_switch_2` nếu trời tối.
+    - **Ban Công**: Bật `switch.ban_cong_switch_1` nếu trời tối.
+    - **Nhà Bếp**: Bật `switch.nha_bep_switch_2` và `switch.nha_bep_switch_3` bất kể ngày/đêm.
+    - **Sân Sau**: Bật `switch.san_sau_switch_switch_1` bất kể ngày/đêm.
+- **Logic tắt đèn (`smart_presence_lighting_turn_off`):**
+  - Tự động tắt sau **2 phút** không còn người đối với: Sân Trước, Sân Sau, Ban Công.
+  - Tự động tắt sau **5 phút** không còn người đối với: Phòng Khách, Nhà Bếp.
 
-### 6.2. Các bước triển khai
+### 5.2. Điều khiển Cổng thông minh & Thông báo đẩy
+- Khi phát hiện người hoặc xe tại Cổng / Sân Trước:
+  - Bắn thông báo kèm ảnh snapshot tới `notify.mobile_app_pixel_10_pro_xl`.
+  - Nút **Mở/Đóng cổng**: Kích hoạt `switch.cong_switch_switch_1` (bật 1 giây rồi tự tắt giả lập nút bấm xung).
+  - Nút **Mở 1 cánh**: Kích hoạt scene Tuya `scene.mo_1_cong`.
+  - Nút **Xem clip**: Mở trực tiếp video sự kiện trên Frigate.
 
-1. **Clone repository:**
+---
+
+## 6. Lưu trữ 24/7 & Cơ chế cuốn chiếu an toàn
+
+- **Ổ cứng chuyên dụng:** Seagate 1TB gắn tại `/mnt/hdd_1tb_seagate/camera_recordings`.
+- **Mức tiêu hao dung lượng:** ~**23.5 GB / ngày** cho cả 6 luồng camera H.264.
+- **Chính sách lưu trữ (`retain.days: 30`):**
+  - Toàn bộ video ghi hình liên tục 24/7 và clip sự kiện được lưu trữ tối thiểu **30 ngày gần nhất** (~700 - 750 GB).
+  - Tự động cuốn chiếu xóa các đoạn video cũ nhất khi sang ngày mới, luôn bảo toàn 20-30% dung lượng trống cho ổ cứng.
+
+---
+
+## 7. Hướng dẫn Cài đặt & Triển khai
+
+### 7.1. Chuẩn bị môi trường
+1. Cài đặt Docker & Docker Compose Plugin.
+2. Cài đặt NVIDIA Container Toolkit để hỗ trợ GPU pass-through:
    ```bash
-   git clone https://github.com/LTNhoTin/smarthome.git
+   nvidia-ctk runtime configure --runtime=docker
+   sudo systemctl restart docker
+   ```
+3. Kiểm tra GPU ID:
+   ```bash
+   nvidia-smi --query-gpu=index,name,uuid --format=csv
+   ```
+   *(Đảm bảo card RTX 3060 tương ứng với device ID `1`)*.
+
+### 7.2. Tải mã nguồn & Cấu hình biến môi trường
+1. Clone repository:
+   ```bash
+   git clone https://github.com/nhotin/smarthome.git
    cd smarthome
    ```
-
-2. **Cấu hình biến môi trường:**
-   Sao chép file `.env.example` thành `.env` và điền đầy đủ các thông tin bí mật cá nhân:
+2. Khởi tạo file cấu hình `.env`:
    ```bash
    cp .env.example .env
    nano .env
    ```
+   *(Điền thông tin tài khoản Tuya Cloud, MQTT, HA Tokens)*.
 
-3. **Khởi động các dịch vụ Docker:**
+3. Tải model YOLOv8s ONNX (nếu chưa có):
    ```bash
-   docker compose up -d
+   mkdir -p frigate/config/model_cache
+   curl -L -o frigate/config/model_cache/yolov8s.onnx https://github.com/blakeblackshear/frigate/raw/master/docker/tensorrt/detector/yolov8s.onnx
    ```
 
-4. **Kiểm tra trạng thái:**
-   ```bash
-   docker compose ps
-   docker compose logs -f frigate
-   ```
-
-5. **Truy cập giao diện:**
-   - Home Assistant: `http://<IP-SERVER>:8123`
-   - Frigate NVR: `http://<IP-SERVER>:5000`
-   - Mosquitto MQTT: Port `1883`
+### 7.3. Khởi động hệ thống
+```bash
+docker compose up -d
+```
 
 ---
 
-## 7. Bảo mật & Quản lý thông tin nhạy cảm
+## 8. Quản lý Vận hành & Lệnh hữu ích
+
+### 8.1. Kiểm tra trạng thái dịch vụ & GPU
+- Xem trạng thái các container:
+  ```bash
+  docker compose ps
+  ```
+- Kiểm tra tiến trình sử dụng GPU RTX 3060:
+  ```bash
+  nvidia-smi -i 1
+  ```
+  *(Bạn sẽ thấy các tiến trình `ffmpeg` và tiến trình suy luận ONNX xuất hiện tại GPU 1; GPU 0 vẫn hoàn toàn trống tải camera)*.
+
+### 8.2. Xem nhật ký hoạt động (Logs)
+- Xem log Frigate NVR:
+  ```bash
+  docker compose logs -f --tail=100 frigate
+  ```
+- Xem log Home Assistant:
+  ```bash
+  docker compose logs -f --tail=100 homeassistant
+  ```
+- Kiểm tra tốc độ suy luận AI (Inference Speed):
+  ```bash
+  curl -s http://127.0.0.1:5000/api/stats | jq '.detectors'
+  ```
+
+---
+
+## 9. Bảo mật & Biến môi trường
 
 > [!IMPORTANT]
-> Dự án này được thiết kế để chia sẻ công khai an toàn mà **không làm lộ bất kỳ bí mật nào của gia đình**:
-> - Mọi mật khẩu, token, tài khoản Sonoff, mã Tuya Cloud đều được bảo vệ trong file `.env`.
-> - File `.gitignore` đã được cấu hình chặt chẽ để loại bỏ `.env`, token, file database SQLite (`*.db`), và toàn bộ thư mục `.storage/`.
-> - Tuyệt đối không xóa file `.gitignore` hoặc commit file `.env` lên git repository.
+> Dự án được thiết kế an toàn để lưu trữ công khai trên Git:
+> - Toàn bộ các thông tin nhạy cảm (Access ID, Secret, Password, IP cá nhân) được quản lý qua biến môi trường `.env`.
+> - File [.gitignore](file:///.gitignore) đã chặn tất cả các file cơ sở dữ liệu SQLite (`*.db`), log, token cá nhân và thư mục `.storage/`.
+> - Tuyệt đối không commit file `.env` lên GitHub.

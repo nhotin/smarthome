@@ -42,26 +42,33 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$CAMERA_NAME] $*"
 }
 
-log "Khởi động stream bridge (ffmpeg: $FFMPEG)"
-
-while true; do
-    log "Đang lấy RTSP URL từ HA..."
-    URL=$(curl -s --connect-timeout 5 --max-time 15 "$HA_API/$CAMERA_NAME")
-
+# Lấy RTSP URL tươi từ Home Assistant (thử tối đa 3 lần)
+URL=""
+for ((i=1; i<=3; i++)); do
+    URL=$(curl -s --connect-timeout 4 --max-time 8 "$HA_API/$CAMERA_NAME")
     if [[ "$URL" =~ ^rtsps?:// ]]; then
-        log "Bắt đầu stream → $OUTPUT_URL"
-        "$FFMPEG" -hide_banner -loglevel warning \
-            -rtsp_transport tcp \
-            -i "$URL" \
-            -c copy \
-            -f rtsp "${OUTPUT_URL}"
-        EXIT_CODE=$?
-        log "Stream kết thúc (exit=$EXIT_CODE). Thử lại sau ${RETRY_DELAY}s..."
-    else
-        log "Không lấy được URL (response: '$URL'). Thử lại sau ${ERROR_DELAY}s..."
-        sleep "$ERROR_DELAY"
-        continue
+        break
     fi
-
-    sleep "$RETRY_DELAY"
+    log "Thử lấy URL lần $i/3 thất bại (response: '$URL'). Đợi 2s..."
+    sleep 2
 done
+
+if [[ ! "$URL" =~ ^rtsps?:// ]]; then
+    log "LỖI: Không lấy được RTSP URL hợp lệ sau 3 lần thử. Thoát để go2rtc quản lý retry."
+    exit 1
+fi
+
+log "Bắt đầu stream → $OUTPUT_URL"
+# Dùng exec để ffmpeg thay thế tiến trình shell.
+# Khi luồng cloud ngắt, tiến trình thoát ngay lập tức để go2rtc nhận diện ngắt kết nối
+# và tự khởi động lại luồng mới trong <1s (thay vì bị treo timeout 30s).
+# Cờ -avoid_negative_ts và -fflags +genpts+discardcorrupt giúp ổn định timestamp, tránh bị Frigate discard segment.
+exec "$FFMPEG" -hide_banner -loglevel warning \
+    -avoid_negative_ts make_zero \
+    -fflags +genpts+discardcorrupt \
+    -rtsp_transport tcp \
+    -i "$URL" \
+    -c copy \
+    -rtsp_transport tcp \
+    -f rtsp "${OUTPUT_URL}"
+
