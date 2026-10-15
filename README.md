@@ -110,9 +110,9 @@ Hệ thống quản lý 6 camera giám sát với thứ tự ưu tiên hiển th
 | Thứ tự | Tên hiển thị | Mã Camera | Độ phân giải | FPS Detect | Hardware Accel | Hành vi tự động hóa |
 | :---: | :--- | :--- | :---: | :---: | :---: | :--- |
 | **1** | **Cổng** | `cong` | 480 × 544 | 5 | NVDEC (`preset-nvidia-h264`) | Báo xe, người lạ; Nút bấm mở cổng nhanh |
-| **2** | **Sân Trước** | `san_truoc` | 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật đèn sân (18h-6h); Nút bấm mở cổng |
-| **3** | **Phòng Khách** | `phong_khach`| 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật quạt khách 24/7 khi có người; Bật đèn (18h-6h); Cảnh báo đêm |
-| **4** | **Nhà Bếp** | `bep` | 640 × 720 | 5 | NVDEC (`preset-nvidia-h264`) | Bật đèn bếp 24/7 khi có người; Cảnh báo đêm |
+| **2** | **Sân Trước** | `san_truoc` | 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật cả 3 đèn sân (18h-6h); Nút bấm mở cổng |
+| **3** | **Phòng Khách** | `phong_khach`| 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật quạt 24/7; Bật cả 3 đèn (18h-6h); Cảnh báo đêm |
+| **4** | **Nhà Bếp** | `bep` | 640 × 720 | 5 | NVDEC (`preset-nvidia-h264`) | Bật cả 2 đèn bếp 24/7 khi có người; Cảnh báo đêm |
 | **5** | **Sân Sau** | `san_sau` | 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật đèn sân sau 24/7; Giám sát vật nuôi |
 | **6** | **Ban Công** | `ban_cong` | 640 × 360 | 5 | NVDEC (`preset-nvidia-h264`) | Bật đèn ban công (18h-6h); Giám sát tầng lầu |
 
@@ -159,14 +159,14 @@ File cấu hình [config/automations.yaml](file:///home/nhotin/work/home/config/
 - **Công tắc kích hoạt chung:** `input_boolean.smart_lighting_enabled` (tạo trong `config/configuration.yaml`).
 - **Logic bật thiết bị (`smart_presence_lighting_turn_on`):**
   - Khi `binary_sensor.<khu_vuc>_person_occupancy` chuyển sang `on`:
-    - **Sân Trước**: Bật `switch.san_truoc_switch_1` và `switch.san_truoc_switch_3` nếu trời tối (`sun.sun == below_horizon` hoặc giờ $\ge 18$ hoặc $< 6$).
-    - **Phòng Khách**: Mở quạt `switch.phong_khach_switch_4` **24/7** khi có người; Đèn `switch.phong_khach_switch_2` chỉ bật khi trời tối.
+    - **Sân Trước**: Bật hết cả **3 đèn** (`switch.san_truoc_switch_1`, `switch.san_truoc_switch_2`, `switch.san_truoc_switch_3`) nếu trời tối (`sun.sun == below_horizon` hoặc giờ $\ge 18$ hoặc $< 6$).
+    - **Phòng Khách**: Mở quạt `switch.phong_khach_switch_4` **24/7** khi có người; Bật hết cả **3 đèn** (`switch.phong_khach_switch_1`, `switch.phong_khach_switch_2`, `switch.phong_khach_switch_3`) nếu trời tối.
     - **Ban Công**: Bật `switch.ban_cong_switch_1` nếu trời tối.
-    - **Nhà Bếp**: Bật công tắc chính `switch.nha_bep_switch_2` **24/7** (tự động kích hoạt kịch bản liên kết Tuya cho các switch phụ).
+    - **Nhà Bếp**: Bật cả **2 đèn** (`switch.nha_bep_switch_2` - Đèn phòng bếp và `switch.nha_bep_switch_3` - Đèn undercabinet) **24/7** bất kể ngày/đêm.
     - **Sân Sau**: Bật `switch.san_sau_switch_switch_1` **24/7** bất kể ngày/đêm.
 - **Logic tắt thiết bị (`smart_presence_lighting_turn_off`):**
-  - Tự động tắt sau **2 phút** không còn người đối với: Sân Trước, Sân Sau, Ban Công.
-  - Tự động tắt sau **5 phút** không còn người đối với: Phòng Khách (tắt cả đèn và quạt), Nhà Bếp.
+  - Tự động tắt sau **2 phút** không còn người đối với: Sân Trước (tắt cả 3 đèn), Sân Sau, Ban Công.
+  - Tự động tắt sau **5 phút** không còn người đối với: Phòng Khách (tắt cả 3 đèn và quạt), Nhà Bếp (tắt cả 2 đèn).
 
 ### 5.2. Điều khiển Cổng thông minh & Thông báo đẩy
 - Khi phát hiện người hoặc xe tại Cổng / Sân Trước:
