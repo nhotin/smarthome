@@ -199,10 +199,13 @@
                       - switch.phong_khach_switch_2
                       - switch.phong_khach_switch_3
 
-        # Nhà Bếp: BẬT CẢ 2 ĐÈN 24/7 (Đèn bếp + Đèn undercabinet)
+        # Nhà Bếp: Chỉ bật cả 2 đèn sau hoàng hôn / ban đêm (18h - 6h), ban ngày buổi sáng không bật
         - conditions:
             - condition: template
               value_template: "{{ trigger.entity_id == 'binary_sensor.bep_person_occupancy' }}"
+            - condition: template
+              value_template: >-
+                {{ is_state('sun.sun', 'below_horizon') or now().hour >= 18 or now().hour < 6 }}
           sequence:
             - service: switch.turn_on
               continue_on_error: true
