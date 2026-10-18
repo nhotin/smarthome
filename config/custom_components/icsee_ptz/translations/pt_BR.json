@@ -1,0 +1,36 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "O dispositivo ja está configurado"
+    },
+    "error": {
+      "cannot_connect": "Falha ao conectar"
+    },
+    "step": {
+      "credentials": {
+        "title": "Preencha com as informações do seu DVRIP",
+        "data": {
+          "name": "Nome",
+          "host": "Host ou IP",
+          "port": "Porta",
+          "username": "Usuário",
+          "password": "Senha"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Defaults",
+        "description": "Configurações padrão do PTZ. Passos é a velocidade do movimento. Predefinição é apenas importante para SetPreset/GotoPreset/ClearPreset. Canal geralmente é 0. Por padrão, os botões PTZ são criados apenas para o canal configurado.",
+        "data": {
+          "channel": "Canal",
+          "step": "Passos",
+          "preset": "Predefinição",
+          "add_ptz_buttons_all_channels": "Adicionar botões PTZ para todos os canais"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,65 @@
+move:
+  target:
+    entity:
+      integration: icsee_ptz
+      domain: binary_sensor
+      device_class: motion
+  fields:
+    cmd:
+      example: "DirectionUp"
+      default: "DirectionUp"
+      required: true
+      selector:
+        select:
+          options:
+            - Stop
+            - DirectionUp
+            - DirectionDown
+            - DirectionLeft
+            - DirectionRight
+            - DirectionLeftUp
+            - DirectionLeftDown
+            - DirectionRightUp
+            - DirectionRightDown
+            - ZoomTile
+            - ZoomWide
+            - FocusNear
+            - FocusFar
+            - IrisSmall
+            - IrisLarge
+            - SetPreset
+            - GotoPreset
+            - ClearPreset
+            - StartTour
+            - StopTour
+    step:
+      default: 2
+      selector:
+        number:
+          min: 0
+          max: 10
+    preset:
+      default: 0
+      selector:
+        number:
+          mode: box
+          min: 0
+          max: 100
+    channel:
+      selector:
+        number:
+          mode: box
+          min: 0
+          max: 64
+synchronize_clock:
+  target:
+    entity:
+      integration: icsee_ptz
+      domain: binary_sensor
+      device_class: motion
+force_frame:
+  target:
+    entity:
+      integration: icsee_ptz
+      domain: binary_sensor
+      device_class: motion

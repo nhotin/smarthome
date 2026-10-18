@@ -1,0 +1,480 @@
+{
+  "entity": {
+    "switch": {
+      "motion_detection": {
+        "default": "mdi:motion-sensor"
+      },
+      "human_detection": {
+        "default": "mdi:account-search"
+      },
+      "tamper_detection": {
+        "default": "mdi:eye-off"
+      },
+      "video_loss_detection": {
+        "default": "mdi:video-off"
+      },
+      "vehicle_detection": {
+        "default": "mdi:car"
+      },
+      "motion_tracking": {
+        "default": "mdi:target-account"
+      },
+      "white_light": {
+        "default": "mdi:lightbulb"
+      },
+      "white_light_one_key": {
+        "default": "mdi:lightbulb-on"
+      },
+      "night_vision": {
+        "default": "mdi:weather-night"
+      },
+      "night_enhance": {
+        "default": "mdi:weather-night"
+      },
+      "low_light_fill": {
+        "default": "mdi:brightness-5"
+      },
+      "starlight": {
+        "default": "mdi:star-four-points"
+      },
+      "wdr": {
+        "default": "mdi:contrast-box"
+      },
+      "prevent_overexposure": {
+        "default": "mdi:white-balance-sunny"
+      },
+      "picture_flip": {
+        "default": "mdi:flip-vertical"
+      },
+      "picture_mirror": {
+        "default": "mdi:flip-horizontal"
+      },
+      "ircut_reverse": {
+        "default": "mdi:swap-horizontal"
+      },
+      "anti_fog": {
+        "default": "mdi:weather-fog"
+      },
+      "privacy_mode": {
+        "default": "mdi:eye-off"
+      },
+      "sleep_schedule": {
+        "default": "mdi:sleep"
+      },
+      "status_led": {
+        "default": "mdi:led-on"
+      },
+      "voice_prompts": {
+        "default": "mdi:account-voice"
+      },
+      "rtsp_server": {
+        "default": "mdi:video-wireless"
+      },
+      "anti_flicker": {
+        "default": "mdi:sine-wave"
+      },
+      "stabilization": {
+        "default": "mdi:vibrate-off"
+      },
+      "daylight_saving": {
+        "default": "mdi:sun-clock"
+      },
+      "lens_correction": {
+        "default": "mdi:camera-metering-matrix"
+      },
+      "auto_gain": {
+        "default": "mdi:brightness-auto"
+      },
+      "motion_push": {
+        "default": "mdi:cellphone-message"
+      },
+      "motion_record": {
+        "default": "mdi:record-rec"
+      },
+      "motion_snapshot": {
+        "default": "mdi:camera"
+      },
+      "motion_beep": {
+        "default": "mdi:volume-high"
+      },
+      "motion_warning_light": {
+        "default": "mdi:alarm-light"
+      },
+      "onvif_password": {
+        "default": "mdi:form-textbox-password"
+      },
+      "cloud_block_all": {
+        "default": "mdi:cloud-off-outline"
+      },
+      "cloud_block_nat": {
+        "default": "mdi:cloud-off-outline"
+      },
+      "cloud_block_rps": {
+        "default": "mdi:cloud-off-outline"
+      },
+      "cloud_block_dss": {
+        "default": "mdi:cloud-off-outline"
+      },
+      "cloud_das": {
+        "default": "mdi:cloud-lock"
+      },
+      "upnp": {
+        "default": "mdi:router-network"
+      },
+      "firmware_online_updates": {
+        "default": "mdi:update"
+      },
+      "firmware_auto_install": {
+        "default": "mdi:download-lock"
+      },
+      "ntp": {
+        "default": "mdi:clock-outline"
+      },
+      "reboot_on_network_loss": {
+        "default": "mdi:restart-alert"
+      },
+      "resume_ptz_position": {
+        "default": "mdi:crosshairs-gps"
+      },
+      "time_on_video": {
+        "default": "mdi:clock-digital"
+      },
+      "name_on_video": {
+        "default": "mdi:format-text"
+      },
+      "logo_on_video": {
+        "default": "mdi:image-text"
+      },
+      "human_detection_box": {
+        "default": "mdi:account-box-outline"
+      },
+      "cloud_access": {
+        "default": "mdi:cloud-lock"
+      },
+      "cloud_push": {
+        "default": "mdi:cloud-upload"
+      },
+      "password_reset_by_code": {
+        "default": "mdi:lock-reset"
+      },
+      "sub_stream": {
+        "default": "mdi:video-outline"
+      },
+      "main_stream_audio": {
+        "default": "mdi:microphone"
+      },
+      "sub_stream_audio": {
+        "default": "mdi:microphone"
+      }
+    },
+    "select": {
+      "day_night_mode": {
+        "default": "mdi:theme-light-dark"
+      },
+      "white_light_mode": {
+        "default": "mdi:light-flood-down"
+      },
+      "white_light_sensitivity": {
+        "default": "mdi:motion-sensor"
+      },
+      "day_night_switch": {
+        "default": "mdi:theme-light-dark"
+      },
+      "image_style": {
+        "default": "mdi:palette"
+      },
+      "tracking_sensitivity": {
+        "default": "mdi:target"
+      },
+      "human_detection_sensitivity": {
+        "default": "mdi:account-search"
+      },
+      "detection_objects": {
+        "default": "mdi:car-search"
+      },
+      "recording_mode": {
+        "default": "mdi:record-rec"
+      },
+      "time_position": {
+        "default": "mdi:clock-edit-outline"
+      },
+      "name_position": {
+        "default": "mdi:format-text"
+      },
+      "auto_restart_day": {
+        "default": "mdi:restart"
+      },
+      "ptz_preset": {
+        "default": "mdi:crosshairs-gps"
+      },
+      "corridor_mode": {
+        "default": "mdi:phone-rotate-portrait"
+      },
+      "metering": {
+        "default": "mdi:camera-metering-center"
+      },
+      "ircut_switching": {
+        "default": "mdi:swap-horizontal"
+      },
+      "time_format": {
+        "default": "mdi:clock-outline"
+      },
+      "date_format": {
+        "default": "mdi:calendar"
+      },
+      "smart_encoding": {
+        "default": "mdi:file-video"
+      },
+      "main_stream_resolution": {
+        "default": "mdi:aspect-ratio"
+      },
+      "sub_stream_resolution": {
+        "default": "mdi:aspect-ratio"
+      },
+      "main_stream_quality": {
+        "default": "mdi:high-definition"
+      },
+      "sub_stream_quality": {
+        "default": "mdi:high-definition"
+      },
+      "main_stream_codec": {
+        "default": "mdi:file-video"
+      },
+      "sub_stream_codec": {
+        "default": "mdi:file-video"
+      },
+      "main_stream_bitrate_control": {
+        "default": "mdi:speedometer"
+      },
+      "sub_stream_bitrate_control": {
+        "default": "mdi:speedometer"
+      }
+    },
+    "number": {
+      "main_stream_fps": {
+        "default": "mdi:filmstrip"
+      },
+      "sub_stream_fps": {
+        "default": "mdi:filmstrip"
+      },
+      "main_stream_bitrate": {
+        "default": "mdi:speedometer"
+      },
+      "sub_stream_bitrate": {
+        "default": "mdi:speedometer"
+      },
+      "main_stream_gop": {
+        "default": "mdi:key"
+      },
+      "sub_stream_gop": {
+        "default": "mdi:key"
+      },
+      "speaker_volume": {
+        "default": "mdi:volume-high"
+      },
+      "microphone_volume": {
+        "default": "mdi:microphone"
+      },
+      "white_light_brightness": {
+        "default": "mdi:brightness-6"
+      },
+      "white_light_duration": {
+        "default": "mdi:timer-outline"
+      },
+      "image_brightness": {
+        "default": "mdi:brightness-6"
+      },
+      "image_contrast": {
+        "default": "mdi:contrast-circle"
+      },
+      "image_saturation": {
+        "default": "mdi:palette"
+      },
+      "image_hue": {
+        "default": "mdi:palette-outline"
+      },
+      "anti_fog_level": {
+        "default": "mdi:weather-fog"
+      },
+      "motion_sensitivity": {
+        "default": "mdi:motion-sensor"
+      },
+      "day_night_sensitivity": {
+        "default": "mdi:theme-light-dark"
+      },
+      "soft_light_threshold": {
+        "default": "mdi:brightness-auto"
+      },
+      "tracking_return_time": {
+        "default": "mdi:timer-outline"
+      },
+      "auto_restart_hour": {
+        "default": "mdi:clock-time-three-outline"
+      },
+      "motion_record_duration": {
+        "default": "mdi:timer-outline"
+      },
+      "motion_warning_light_duration": {
+        "default": "mdi:timer-outline"
+      },
+      "motion_alarm_hold": {
+        "default": "mdi:timer-sand"
+      },
+      "pir_sensitivity": {
+        "default": "mdi:motion-sensor"
+      },
+      "max_exposure_time": {
+        "default": "mdi:camera-timer"
+      },
+      "tamper_sensitivity": {
+        "default": "mdi:cctv-off"
+      },
+      "push_interval": {
+        "default": "mdi:bell-cog"
+      },
+      "pre_record": {
+        "default": "mdi:history"
+      },
+      "recording_file_length": {
+        "default": "mdi:file-clock"
+      },
+      "noise_reduction_day": {
+        "default": "mdi:blur"
+      },
+      "noise_reduction_night": {
+        "default": "mdi:blur"
+      },
+      "gain": {
+        "default": "mdi:tune-vertical"
+      },
+      "exposure_sensitivity": {
+        "default": "mdi:camera-iris"
+      },
+      "wdr_level": {
+        "default": "mdi:contrast-box"
+      }
+    },
+    "button": {
+      "ptz_stop": {
+        "default": "mdi:stop-circle"
+      },
+      "ptz_up": {
+        "default": "mdi:arrow-up-bold-box"
+      },
+      "ptz_down": {
+        "default": "mdi:arrow-down-bold-box"
+      },
+      "ptz_left": {
+        "default": "mdi:arrow-left-bold-box"
+      },
+      "ptz_right": {
+        "default": "mdi:arrow-right-bold-box"
+      },
+      "ptz_left_up": {
+        "default": "mdi:arrow-top-left-bold-box"
+      },
+      "ptz_left_down": {
+        "default": "mdi:arrow-bottom-left-bold-box"
+      },
+      "ptz_right_up": {
+        "default": "mdi:arrow-top-right-bold-box"
+      },
+      "ptz_right_down": {
+        "default": "mdi:arrow-bottom-right-bold-box"
+      },
+      "ptz_zoom_in": {
+        "default": "mdi:magnify-plus"
+      },
+      "ptz_zoom_out": {
+        "default": "mdi:magnify-minus"
+      },
+      "home_go_to": {
+        "default": "mdi:home-import-outline"
+      },
+      "home_set": {
+        "default": "mdi:home-export-outline"
+      },
+      "home_clear": {
+        "default": "mdi:home-remove-outline"
+      },
+      "sync_clock": {
+        "default": "mdi:clock-check"
+      }
+    },
+    "media_player": {
+      "speaker": {
+        "default": "mdi:speaker"
+      }
+    },
+    "binary_sensor": {
+      "password_reset_questions": {
+        "default": "mdi:lock-question"
+      },
+      "password_reset_contact": {
+        "default": "mdi:email-lock"
+      },
+      "telnet_open": {
+        "default": "mdi:console-network"
+      },
+      "app_bound": {
+        "default": "mdi:cellphone-link"
+      },
+      "upnp_ports_open": {
+        "default": "mdi:router-network"
+      }
+    },
+    "sensor": {
+      "users": {
+        "default": "mdi:account-multiple"
+      },
+      "logged_in_as": {
+        "default": "mdi:account-key"
+      },
+      "wifi_signal": {
+        "default": "mdi:wifi"
+      },
+      "cloud_status": {
+        "default": "mdi:cloud"
+      },
+      "abnormal_restarts": {
+        "default": "mdi:restart-alert"
+      },
+      "network_loss_restarts": {
+        "default": "mdi:wifi-refresh"
+      },
+      "video_standard": {
+        "default": "mdi:television-classic"
+      },
+      "exposure_time": {
+        "default": "mdi:timer-outline"
+      },
+      "storage_total": {
+        "default": "mdi:sd"
+      },
+      "storage_free": {
+        "default": "mdi:sd"
+      }
+    },
+    "siren": {
+      "siren": {
+        "default": "mdi:alarm-light"
+      }
+    },
+    "text": {
+      "video_name": {
+        "default": "mdi:format-text"
+      }
+    }
+  },
+  "services": {
+    "move": {
+      "service": "mdi:pan"
+    },
+    "synchronize_clock": {
+      "service": "mdi:clock-check"
+    },
+    "force_frame": {
+      "service": "mdi:play"
+    }
+  }
+}
