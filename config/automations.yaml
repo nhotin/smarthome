@@ -151,7 +151,6 @@
       entity_id:
         - binary_sensor.san_truoc_person_occupancy
         - binary_sensor.san_sau_person_occupancy
-        - binary_sensor.san_sau_motion
         - binary_sensor.phong_khach_person_occupancy
         - binary_sensor.bep_person_occupancy
         - binary_sensor.ban_cong_person_occupancy
@@ -215,10 +214,10 @@
                   - switch.nha_bep_switch_2
                   - switch.nha_bep_switch_3
 
-        # Sân Sau: BẬT CÔNG TẮC 1 NHÀ BẾP (Đèn sân sau) ngay khi có CHUYỂN ĐỘNG hoặc có NGƯỜI
+        # Sân Sau: BẬT CÔNG TẮC 1 NHÀ BẾP (Đèn sân sau) CHỈ KHI CÓ NGƯỜI
         - conditions:
             - condition: template
-              value_template: "{{ trigger.entity_id in ['binary_sensor.san_sau_person_occupancy', 'binary_sensor.san_sau_motion'] }}"
+              value_template: "{{ trigger.entity_id == 'binary_sensor.san_sau_person_occupancy' }}"
           sequence:
             - service: switch.turn_on
               target:
@@ -242,11 +241,6 @@
   alias: 'Đèn Thông Minh AI - Tự động Tắt Đèn khi Người rời đi'
   description: 'Tự động tắt đèn sau khi không còn người trong khu vực'
   trigger:
-    - platform: state
-      entity_id: binary_sensor.san_sau_motion
-      to: 'off'
-      for:
-        minutes: 1
     - platform: state
       entity_id:
         - binary_sensor.san_truoc_person_occupancy
@@ -279,19 +273,6 @@
                   - switch.san_truoc_switch_1
                   - switch.san_truoc_switch_2
                   - switch.san_truoc_switch_3
-
-        # Sân Sau: Hết chuyển động 1 phút, nếu KHÔNG có người thì tắt đèn
-        - conditions:
-            - condition: template
-              value_template: "{{ trigger.entity_id == 'binary_sensor.san_sau_motion' }}"
-            - condition: state
-              entity_id: binary_sensor.san_sau_person_occupancy
-              state: 'off'
-          sequence:
-            - service: switch.turn_off
-              continue_on_error: true
-              target:
-                entity_id: switch.nha_bep_switch_1
 
         # Sân Sau: Người rời đi (sau 2 phút) thì tắt đèn
         - conditions:

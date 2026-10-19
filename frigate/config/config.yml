@@ -189,8 +189,8 @@ cameras:
     objects:
       filters:
         person:
-          min_area: 2500
-          threshold: 0.65
+          min_area: 2000
+          threshold: 0.60
           mask:
             black_board:
               coordinates: "420,100,560,100,560,320,420,320"
