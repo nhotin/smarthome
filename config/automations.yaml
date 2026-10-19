@@ -214,14 +214,14 @@
                   - switch.nha_bep_switch_2
                   - switch.nha_bep_switch_3
 
-        # Sân Sau: BẬT CẢ NGÀY LẪN ĐÊM (24/7 cứ có người là bật)
+        # Sân Sau: BẬT CÔNG TẮC 1 NHÀ BẾP (Đèn sân sau) 24/7 khi có người
         - conditions:
             - condition: template
               value_template: "{{ trigger.entity_id == 'binary_sensor.san_sau_person_occupancy' }}"
           sequence:
             - service: switch.turn_on
               target:
-                entity_id: switch.san_sau_switch_switch_1
+                entity_id: switch.nha_bep_switch_1
 
         # Ban Công: Chỉ bật sau hoàng hôn / ban đêm
         - conditions:
@@ -280,7 +280,7 @@
             - service: switch.turn_off
               continue_on_error: true
               target:
-                entity_id: switch.san_sau_switch_switch_1
+                entity_id: switch.nha_bep_switch_1
         - conditions:
             - condition: template
               value_template: "{{ trigger.entity_id == 'binary_sensor.phong_khach_person_occupancy' }}"
