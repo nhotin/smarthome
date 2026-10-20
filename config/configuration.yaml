@@ -12,6 +12,11 @@ shell_command:
   save_gate_snapshots: >-
     curl -s http://127.0.0.1:5000/api/cong/latest.jpg -o /config/www/snapshots/cong_latest.jpg;
     curl -s http://127.0.0.1:5000/api/san_truoc/latest.jpg -o /config/www/snapshots/san_truoc_latest.jpg
+  save_balcony_snapshot: >-
+    curl -s http://127.0.0.1:5000/api/ban_cong/latest.jpg -o /config/www/snapshots/ban_cong_latest.jpg
+  save_living_door_snapshots: >-
+    curl -s http://127.0.0.1:5000/api/phong_khach/latest.jpg -o /config/www/snapshots/phong_khach_latest.jpg;
+    curl -s http://127.0.0.1:5000/api/san_truoc/latest.jpg -o /config/www/snapshots/san_truoc_latest.jpg
 
 # Load frontend themes from the themes folder
 frontend:

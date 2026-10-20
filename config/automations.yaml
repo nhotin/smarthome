@@ -151,6 +151,8 @@
       entity_id:
         - binary_sensor.san_truoc_person_occupancy
         - binary_sensor.gate_sensor_door
+        - binary_sensor.door_sensor_living_door
+        - binary_sensor.door_sensor_office_door
         - binary_sensor.san_sau_person_occupancy
         - binary_sensor.phong_khach_person_occupancy
         - binary_sensor.bep_person_occupancy
@@ -178,10 +180,10 @@
                   - switch.san_truoc_switch_2
                   - switch.san_truoc_switch_3
 
-        # Phòng Khách: Mở quạt 24/7 khi thấy người; Mở hết cả 3 đèn sau hoàng hôn / ban đêm
+        # Phòng Khách: Mở quạt 24/7 khi thấy người hoặc Cửa Chính mở; Mở hết cả 3 đèn sau hoàng hôn / ban đêm
         - conditions:
             - condition: template
-              value_template: "{{ trigger.entity_id == 'binary_sensor.phong_khach_person_occupancy' }}"
+              value_template: "{{ trigger.entity_id in ['binary_sensor.phong_khach_person_occupancy', 'binary_sensor.door_sensor_living_door'] }}"
           sequence:
             - service: switch.turn_on
               continue_on_error: true
@@ -224,17 +226,20 @@
               target:
                 entity_id: switch.nha_bep_switch_1
 
-        # Ban Công: Chỉ bật sau hoàng hôn / ban đêm
+        # Ban Công: Bật cả 2 đèn khi có Người hoặc khi Cửa Ban Công mở sau hoàng hôn / ban đêm
         - conditions:
             - condition: template
-              value_template: "{{ trigger.entity_id == 'binary_sensor.ban_cong_person_occupancy' }}"
+              value_template: "{{ trigger.entity_id in ['binary_sensor.ban_cong_person_occupancy', 'binary_sensor.door_sensor_office_door'] }}"
             - condition: template
               value_template: >-
                 {{ is_state('sun.sun', 'below_horizon') or now().hour >= 18 or now().hour < 6 }}
           sequence:
             - service: switch.turn_on
+              continue_on_error: true
               target:
-                entity_id: switch.ban_cong_switch_1
+                entity_id:
+                  - switch.ban_cong_switch_1
+                  - switch.ban_cong_switch_2
   mode: parallel
   max: 10
 
@@ -405,33 +410,173 @@
   mode: single
 
 # ─────────────────────────────────────────────────────────────────────────────
-# NHÓM 2: CẢNH BÁO CỔNG HOẶC CỬA BAN CÔNG MỞ QUÁ LÂU (NGÀY & ĐÊM)
+# AN NINH CỬA BAN CÔNG: CẢNH BÁO MỞ CỬA KÈM ẢNH CAMERA BAN CÔNG & AI
+# ─────────────────────────────────────────────────────────────────────────────
+- id: 'balcony_door_opened_alert'
+  alias: 'Cửa Ban Công - Cảnh báo Cửa Mở kèm Ảnh Camera Ban Công'
+  description: 'Khi cửa ban công mở: chụp ảnh camera ban công tức thì, phân tích người AI và gửi cảnh báo an ninh về điện thoại'
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.door_sensor_office_door
+      to: 'on'
+  action:
+    # 1. Chụp ảnh snapshot camera ban công
+    - service: shell_command.save_balcony_snapshot
+      continue_on_error: true
+    - delay:
+        milliseconds: 300
+
+    # 2. Phân tích trạng thái vắng nhà, ban đêm và AI Frigate
+    - variables:
+        is_away: >-
+          {{ not is_state('person.nho_tin', 'home') and not is_state('person.hong_ngan', 'home') }}
+        is_night: >-
+          {{ now().hour >= 23 or now().hour < 5 }}
+        has_person: >-
+          {{ is_state('binary_sensor.ban_cong_person_occupancy', 'on') }}
+
+    # 3. Gửi thông báo an ninh kèm ảnh
+    - service: notify.mobile_app_pixel_10_pro_xl
+      data:
+        title: >-
+          {% if is_away %}
+            🚨 CẢNH BÁO ĐỘT NHẬP: CỬA BAN CÔNG MỞ KHI VẮNG NHÀ!
+          {% elif is_night %}
+            🌙 CẢNH BÁO: CỬA BAN CÔNG MỞ BAN ĐÊM ({{ now().strftime('%H:%M:%S') }})
+          {% else %}
+            🚪 CỬA BAN CÔNG VỪA MỞ ({{ now().strftime('%H:%M:%S') }})
+          {% endif %}
+        message: >-
+          {% if is_away %}
+            ⚠️ Phát hiện cửa ra ban công bị mở khi không có ai ở nhà! AI {{ 'phát hiện Người trên ban công' if has_person else 'chưa thấy người' }}.
+          {% elif is_night %}
+            Cửa ban công mở vào khung giờ khuya. AI {{ 'phát hiện Người trên ban công' if has_person else 'chưa thấy người' }}.
+          {% else %}
+            Cửa ra ban công vừa mở lúc {{ now().strftime('%H:%M:%S') }}.
+          {% endif %}
+        data:
+          image: "/local/snapshots/ban_cong_latest.jpg?v={{ now().timestamp() }}"
+          group: "door_event"
+          tag: "door_status_balcony"
+          channel: >-
+            {{ 'alarm_stream' if (is_away or is_night) else 'Door_Alerts' }}
+          importance: >-
+            {{ 'high' if (is_away or is_night) else 'default' }}
+          clickAction: "/frigate-nvr"
+          actions:
+            - action: "TRIGGER_SIREN"
+              title: "🚨 Hú còi báo động"
+            - action: "TURN_ON_BALCONY_LIGHTS"
+              title: "💡 Bật sáng đèn ban công"
+  mode: single
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AN NINH CỬA CHÍNH: CẢNH BÁO MỞ CỬA KÈM ẢNH PHÒNG KHÁCH & SÂN TRƯỚC
+# ─────────────────────────────────────────────────────────────────────────────
+- id: 'living_door_opened_alert'
+  alias: 'Cửa Chính - Cảnh báo Cửa Chính Mở kèm Ảnh Camera'
+  description: 'Khi cửa chính phòng khách mở: chụp ảnh phòng khách và sân trước, gửi cảnh báo an ninh về điện thoại'
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.door_sensor_living_door
+      to: 'on'
+  action:
+    # 1. Chụp ảnh snapshot phòng khách & sân trước
+    - service: shell_command.save_living_door_snapshots
+      continue_on_error: true
+    - delay:
+        milliseconds: 300
+
+    # 2. Phân tích trạng thái vắng nhà, ban đêm
+    - variables:
+        is_away: >-
+          {{ not is_state('person.nho_tin', 'home') and not is_state('person.hong_ngan', 'home') }}
+        is_night: >-
+          {{ now().hour >= 23 or now().hour < 5 }}
+        has_person: >-
+          {{ is_state('binary_sensor.phong_khach_person_occupancy', 'on') or is_state('binary_sensor.san_truoc_person_occupancy', 'on') }}
+
+    # 3. Gửi thông báo an ninh kèm ảnh Camera Phòng Khách
+    - service: notify.mobile_app_pixel_10_pro_xl
+      data:
+        title: >-
+          {% if is_away %}
+            🚨 CẢNH BÁO ĐỘT NHẬP: CỬA CHÍNH MỞ KHI VẮNG NHÀ!
+          {% elif is_night %}
+            🌙 CẢNH BÁO: CỬA CHÍNH MỞ BAN ĐÊM ({{ now().strftime('%H:%M:%S') }})
+          {% else %}
+            🚪 CỬA CHÍNH VỪA MỞ ({{ now().strftime('%H:%M:%S') }})
+          {% endif %}
+        message: >-
+          {% if is_away %}
+            ⚠️ Phát hiện cửa chính bị mở khi không có ai ở nhà! AI {{ 'phát hiện có Người' if has_person else 'chưa thấy người' }}.
+          {% elif is_night %}
+            Cửa chính mở vào khung giờ khuya. AI {{ 'phát hiện có Người' if has_person else 'chưa thấy người' }}.
+          {% else %}
+            Cửa chính phòng khách vừa mở lúc {{ now().strftime('%H:%M:%S') }}.
+          {% endif %}
+        data:
+          image: "/local/snapshots/phong_khach_latest.jpg?v={{ now().timestamp() }}"
+          group: "door_event"
+          tag: "door_status_living"
+          channel: >-
+            {{ 'alarm_stream' if (is_away or is_night) else 'Door_Alerts' }}
+          importance: >-
+            {{ 'high' if (is_away or is_night) else 'default' }}
+          clickAction: "/frigate-nvr"
+          actions:
+            - action: "TRIGGER_SIREN"
+              title: "🚨 Hú còi báo động"
+            - action: "CLOSE_GATE"
+              title: "🔒 Đóng cổng nếu mở"
+  mode: single
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NHÓM 2: CẢNH BÁO CỔNG, CỬA CHÍNH HOẶC CỬA BAN CÔNG MỞ QUÁ LÂU (NGÀY & ĐÊM)
 # ─────────────────────────────────────────────────────────────────────────────
 - id: 'door_opened_too_long_alert'
-  alias: 'Cảm Biến Cửa - Cảnh báo Cổng hoặc Cửa Ban Công mở quá lâu'
-  description: 'Cảnh báo khi cổng mở quá 5 phút (ban ngày) hoặc quá 2 phút (ban đêm); cửa ban công mở quá 10 phút'
+  alias: 'Cảm Biến Cửa - Cảnh báo Cổng, Cửa Chính hoặc Cửa Ban Công mở quá lâu'
+  description: 'Cảnh báo khi cổng, cửa chính hoặc cửa ban công mở quá 5 phút (ban ngày) hoặc quá 2 phút (ban đêm)'
   trigger:
-    # Cổng mở quá 5 phút
+    # Cổng mở
     - platform: state
       entity_id: binary_sensor.gate_sensor_door
       to: 'on'
       for:
         minutes: 5
       id: 'gate_day_5m'
-    # Cổng mở quá 2 phút vào ban đêm
     - platform: state
       entity_id: binary_sensor.gate_sensor_door
       to: 'on'
       for:
         minutes: 2
       id: 'gate_night_2m'
-    # Cửa ban công (phòng làm việc) mở quá 10 phút
+    # Cửa chính mở
+    - platform: state
+      entity_id: binary_sensor.door_sensor_living_door
+      to: 'on'
+      for:
+        minutes: 5
+      id: 'living_day_5m'
+    - platform: state
+      entity_id: binary_sensor.door_sensor_living_door
+      to: 'on'
+      for:
+        minutes: 2
+      id: 'living_night_2m'
+    # Cửa ban công mở
     - platform: state
       entity_id: binary_sensor.door_sensor_office_door
       to: 'on'
       for:
-        minutes: 10
-      id: 'balcony_door_10m'
+        minutes: 5
+      id: 'balcony_day_5m'
+    - platform: state
+      entity_id: binary_sensor.door_sensor_office_door
+      to: 'on'
+      for:
+        minutes: 2
+      id: 'balcony_night_2m'
   action:
     - choose:
         # Cổng mở quá lâu
@@ -454,7 +599,7 @@
                 data:
                   image: "/local/snapshots/cong_latest.jpg?v={{ now().timestamp() }}"
                   tag: "gate_opened_too_long"
-                  group: "gate_warning"
+                  group: "door_warning"
                   channel: "alarm_stream"
                   importance: "high"
                   clickAction: "/frigate-nvr"
@@ -462,19 +607,60 @@
                     - action: "CLOSE_GATE"
                       title: "🔒 Đóng cổng ngay"
 
-        # Cửa ban công mở quá 10 phút
+        # Cửa chính mở quá lâu
         - conditions:
             - condition: template
-              value_template: "{{ trigger.id == 'balcony_door_10m' }}"
+              value_template: "{{ trigger.id in ['living_day_5m', 'living_night_2m'] }}"
+            - condition: template
+              value_template: >-
+                {{ trigger.id == 'living_day_5m' or (now().hour >= 22 or now().hour < 6) }}
           sequence:
+            - service: shell_command.save_living_door_snapshots
+              continue_on_error: true
+            - delay:
+                milliseconds: 300
             - service: notify.mobile_app_pixel_10_pro_xl
               data:
-                title: "⚠️ CẢNH BÁO: CỬA BAN CÔNG MỞ HƠN 10 PHÚT!"
-                message: "Cửa ra ban công đang mở hơn 10 phút. Hãy kiểm tra khép cửa để tránh bụi, mưa và thoát nhiệt máy lạnh."
+                title: "⚠️ CẢNH BÁO: CỬA CHÍNH ĐANG MỞ QUÁ LÂU!"
+                message: >-
+                  Cửa chính phòng khách đang mở liên tục {{ 'hơn 2 phút (ban đêm)' if trigger.id == 'living_night_2m' else 'hơn 5 phút' }}. Hãy kiểm tra khép cửa để đảm bảo an ninh!
                 data:
+                  image: "/local/snapshots/phong_khach_latest.jpg?v={{ now().timestamp() }}"
+                  tag: "living_door_opened_too_long"
+                  group: "door_warning"
+                  channel: "alarm_stream"
+                  importance: "high"
+                  clickAction: "/frigate-nvr"
+
+        # Cửa ban công mở quá lâu
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.id in ['balcony_day_5m', 'balcony_night_2m'] }}"
+            - condition: template
+              value_template: >-
+                {{ trigger.id == 'balcony_day_5m' or (now().hour >= 22 or now().hour < 6) }}
+          sequence:
+            - service: shell_command.save_balcony_snapshot
+              continue_on_error: true
+            - delay:
+                milliseconds: 300
+            - service: notify.mobile_app_pixel_10_pro_xl
+              data:
+                title: "⚠️ CẢNH BÁO: CỬA BAN CÔNG ĐANG MỞ QUÁ LÂU!"
+                message: >-
+                  Cửa ra ban công đang mở liên tục {{ 'hơn 2 phút (ban đêm)' if trigger.id == 'balcony_night_2m' else 'hơn 5 phút' }}. Hãy kiểm tra khép cửa để tránh bụi, mưa và thoát nhiệt máy lạnh.
+                data:
+                  image: "/local/snapshots/ban_cong_latest.jpg?v={{ now().timestamp() }}"
                   tag: "balcony_door_opened_too_long"
-                  channel: "General_Alerts"
-                  clickAction: "/lovelace"
+                  group: "door_warning"
+                  channel: >-
+                    {{ 'alarm_stream' if trigger.id == 'balcony_night_2m' else 'General_Alerts' }}
+                  importance: >-
+                    {{ 'high' if trigger.id == 'balcony_night_2m' else 'default' }}
+                  clickAction: "/frigate-nvr"
+                  actions:
+                    - action: "TURN_ON_BALCONY_LIGHTS"
+                      title: "💡 Bật đèn ban công"
   mode: parallel
   max: 5
 
@@ -502,8 +688,8 @@
   mode: single
 
 - id: 'gate_notification_action_trigger_siren'
-  alias: 'Cửa Cổng - Hú còi báo động từ thông báo'
-  description: 'Hú còi camera sân trong 15 giây khi người dùng bấm Hú còi báo động từ thông báo'
+  alias: 'An Ninh - Hú còi báo động từ thông báo'
+  description: 'Hú còi camera sân và camera phòng khách trong 15 giây khi người dùng bấm Hú còi báo động từ thông báo'
   trigger:
     - platform: event
       event_type: mobile_app_notification_action
@@ -511,18 +697,50 @@
         action: TRIGGER_SIREN
   action:
     - service: siren.turn_on
+      continue_on_error: true
       target:
-        entity_id: siren.camera_san_siren
+        entity_id:
+          - siren.camera_san_siren
+          - siren.camera_phong_khach_siren
     - delay:
         seconds: 15
     - service: siren.turn_off
+      continue_on_error: true
       target:
-        entity_id: siren.camera_san_siren
+        entity_id:
+          - siren.camera_san_siren
+          - siren.camera_phong_khach_siren
     - service: notify.mobile_app_pixel_10_pro_xl
       data:
         message: "Đã tắt còi báo động sau 15 giây"
         data:
           tag: "siren_status"
+  mode: single
+
+- id: 'balcony_notification_action_turn_on_lights'
+  alias: 'Ban Công - Bật sáng đèn ban công từ thông báo'
+  description: 'Bật toàn bộ đèn ban công khi người dùng bấm nút trên thông báo'
+  trigger:
+    - platform: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: TURN_ON_BALCONY_LIGHTS
+  action:
+    - service: switch.turn_on
+      continue_on_error: true
+      target:
+        entity_id:
+          - switch.ban_cong_switch_1
+          - switch.ban_cong_switch_2
+    - service: light.turn_on
+      continue_on_error: true
+      target:
+        entity_id: light.camera_ban_cong_floodlight
+    - service: notify.mobile_app_pixel_10_pro_xl
+      data:
+        message: "Đã bật sáng toàn bộ đèn và đèn pha ban công"
+        data:
+          tag: "balcony_status"
   mode: single
 
 # ─────────────────────────────────────────────────────────────────────────────
