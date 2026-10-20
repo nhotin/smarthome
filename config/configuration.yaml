@@ -2,9 +2,16 @@
 default_config:
 
 homeassistant:
+  allowlist_external_dirs:
+    - /config/www/snapshots
   media_dirs:
     local: /media
     cameras: /media/cameras
+
+shell_command:
+  save_gate_snapshots: >-
+    curl -s http://127.0.0.1:5000/api/cong/latest.jpg -o /config/www/snapshots/cong_latest.jpg;
+    curl -s http://127.0.0.1:5000/api/san_truoc/latest.jpg -o /config/www/snapshots/san_truoc_latest.jpg
 
 # Load frontend themes from the themes folder
 frontend:

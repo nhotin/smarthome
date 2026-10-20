@@ -150,6 +150,7 @@
     - platform: state
       entity_id:
         - binary_sensor.san_truoc_person_occupancy
+        - binary_sensor.gate_sensor_door
         - binary_sensor.san_sau_person_occupancy
         - binary_sensor.phong_khach_person_occupancy
         - binary_sensor.bep_person_occupancy
@@ -161,10 +162,10 @@
       state: 'on'
   action:
     - choose:
-        # Sân Trước: Mở hết cả 3 đèn sau hoàng hôn / ban đêm
+        # Sân Trước: Mở hết cả 3 đèn sau hoàng hôn / ban đêm khi có Người hoặc khi Cổng Mở
         - conditions:
             - condition: template
-              value_template: "{{ trigger.entity_id == 'binary_sensor.san_truoc_person_occupancy' }}"
+              value_template: "{{ trigger.entity_id in ['binary_sensor.san_truoc_person_occupancy', 'binary_sensor.gate_sensor_door'] }}"
             - condition: template
               value_template: >-
                 {{ is_state('sun.sun', 'below_horizon') or now().hour >= 18 or now().hour < 6 }}
@@ -314,3 +315,261 @@
                 entity_id: switch.ban_cong_switch_1
   mode: parallel
   max: 10
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NHÓM 1 & NHÓM 4: CẢNH BÁO CỔNG MỞ KÈM ẢNH 2 CAMERA (CỔNG + SÂN TRƯỚC) & AI
+# ─────────────────────────────────────────────────────────────────────────────
+- id: 'gate_sensor_opened_alert'
+  alias: 'Cửa Cổng - Cảnh báo Cổng Mở kèm Ảnh Cổng & Sân Trước'
+  description: 'Khi cửa cổng mở: chụp ảnh 2 camera (Cổng & Sân Trước), phân tích đối tượng Frigate AI và gửi thông báo thông minh về điện thoại'
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.gate_sensor_door
+      to: 'on'
+  action:
+    # 1. Chụp ảnh snapshot tức thì từ 2 camera Cổng và Sân Trước
+    - service: shell_command.save_gate_snapshots
+      continue_on_error: true
+    - delay:
+        milliseconds: 300
+
+    # 2. Chuẩn bị thông tin nhận diện đối tượng và trạng thái nhà
+    - variables:
+        is_away: >-
+          {{ not is_state('person.nho_tin', 'home') and not is_state('person.hong_ngan', 'home') }}
+        is_night: >-
+          {{ now().hour >= 23 or now().hour < 5 }}
+        ai_summary: >-
+          {% set items = [] %}
+          {% if is_state('binary_sensor.cong_person_occupancy', 'on') or is_state('binary_sensor.san_truoc_person_occupancy', 'on') %}
+            {% set items = items + ['Người'] %}
+          {% endif %}
+          {% if is_state('binary_sensor.cong_motorcycle_occupancy', 'on') or is_state('binary_sensor.san_truoc_motorcycle_occupancy', 'on') %}
+            {% set items = items + ['Xe máy'] %}
+          {% endif %}
+          {% if is_state('binary_sensor.cong_car_occupancy', 'on') or is_state('binary_sensor.san_truoc_car_occupancy', 'on') %}
+            {% set items = items + ['Ô tô'] %}
+          {% endif %}
+          {% if items | length > 0 %}
+            Phát hiện: {{ items | join(', ') }}
+          {% else %}
+            Chưa phát hiện người/xe trong tầm quét
+          {% endif %}
+
+    # 3. Gửi thông báo chính kèm ảnh Camera Cổng
+    - service: notify.mobile_app_pixel_10_pro_xl
+      data:
+        title: >-
+          {% if is_away %}
+            🚨 CẢNH BÁO: CỔNG MỞ KHI VẮNG NHÀ!
+          {% elif is_night %}
+            🌙 CẢNH BÁO: CỔNG MỞ BAN ĐÊM ({{ now().strftime('%H:%M:%S') }})
+          {% else %}
+            🚪 CỔNG VỪA MỞ ({{ now().strftime('%H:%M:%S') }})
+          {% endif %}
+        message: >-
+          {% if is_away %}
+            ⚠️ Phát hiện cổng mở trong khi không có ai ở nhà! AI {{ ai_summary }}.
+          {% elif is_night %}
+            Cổng mở vào khung giờ khuya. AI {{ ai_summary }}.
+          {% else %}
+            Cổng vừa mở lúc {{ now().strftime('%H:%M:%S') }}. AI {{ ai_summary }}.
+          {% endif %}
+        data:
+          image: "/local/snapshots/cong_latest.jpg?v={{ now().timestamp() }}"
+          group: "gate_event"
+          tag: "gate_status_cong"
+          channel: >-
+            {{ 'alarm_stream' if (is_away or is_night) else 'Gate_Alerts' }}
+          importance: >-
+            {{ 'high' if (is_away or is_night) else 'default' }}
+          clickAction: "/frigate-nvr"
+          actions:
+            - action: "CLOSE_GATE"
+              title: "🔒 Đóng cổng ngay"
+            - action: "TOGGLE_SUB_GATE"
+              title: "🚪 Mở 1 cánh"
+            - action: "TRIGGER_SIREN"
+              title: "🚨 Hú còi báo động"
+
+    # 4. Gửi thông báo kèm ảnh Camera Sân Trước (gom chung nhóm gate_event)
+    - service: notify.mobile_app_pixel_10_pro_xl
+      data:
+        title: "📸 Góc nhìn Sân Trước"
+        message: "Ảnh chụp sân trước lúc {{ now().strftime('%H:%M:%S') }}"
+        data:
+          image: "/local/snapshots/san_truoc_latest.jpg?v={{ now().timestamp() }}"
+          group: "gate_event"
+          tag: "gate_status_san_truoc"
+          clickAction: "/frigate-nvr"
+  mode: single
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NHÓM 2: CẢNH BÁO CỔNG HOẶC CỬA BAN CÔNG MỞ QUÁ LÂU (NGÀY & ĐÊM)
+# ─────────────────────────────────────────────────────────────────────────────
+- id: 'door_opened_too_long_alert'
+  alias: 'Cảm Biến Cửa - Cảnh báo Cổng hoặc Cửa Ban Công mở quá lâu'
+  description: 'Cảnh báo khi cổng mở quá 5 phút (ban ngày) hoặc quá 2 phút (ban đêm); cửa ban công mở quá 10 phút'
+  trigger:
+    # Cổng mở quá 5 phút
+    - platform: state
+      entity_id: binary_sensor.gate_sensor_door
+      to: 'on'
+      for:
+        minutes: 5
+      id: 'gate_day_5m'
+    # Cổng mở quá 2 phút vào ban đêm
+    - platform: state
+      entity_id: binary_sensor.gate_sensor_door
+      to: 'on'
+      for:
+        minutes: 2
+      id: 'gate_night_2m'
+    # Cửa ban công (phòng làm việc) mở quá 10 phút
+    - platform: state
+      entity_id: binary_sensor.door_sensor_office_door
+      to: 'on'
+      for:
+        minutes: 10
+      id: 'balcony_door_10m'
+  action:
+    - choose:
+        # Cổng mở quá lâu
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.id in ['gate_day_5m', 'gate_night_2m'] }}"
+            - condition: template
+              value_template: >-
+                {{ trigger.id == 'gate_day_5m' or (now().hour >= 22 or now().hour < 6) }}
+          sequence:
+            - service: shell_command.save_gate_snapshots
+              continue_on_error: true
+            - delay:
+                milliseconds: 300
+            - service: notify.mobile_app_pixel_10_pro_xl
+              data:
+                title: "⚠️ CẢNH BÁO: CỔNG ĐANG MỞ QUÁ LÂU!"
+                message: >-
+                  Cổng đã mở liên tục {{ 'hơn 2 phút (ban đêm)' if trigger.id == 'gate_night_2m' else 'hơn 5 phút' }}. Hãy kiểm tra đóng cổng để đảm bảo an toàn.
+                data:
+                  image: "/local/snapshots/cong_latest.jpg?v={{ now().timestamp() }}"
+                  tag: "gate_opened_too_long"
+                  group: "gate_warning"
+                  channel: "alarm_stream"
+                  importance: "high"
+                  clickAction: "/frigate-nvr"
+                  actions:
+                    - action: "CLOSE_GATE"
+                      title: "🔒 Đóng cổng ngay"
+
+        # Cửa ban công mở quá 10 phút
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.id == 'balcony_door_10m' }}"
+          sequence:
+            - service: notify.mobile_app_pixel_10_pro_xl
+              data:
+                title: "⚠️ CẢNH BÁO: CỬA BAN CÔNG MỞ HƠN 10 PHÚT!"
+                message: "Cửa ra ban công đang mở hơn 10 phút. Hãy kiểm tra khép cửa để tránh bụi, mưa và thoát nhiệt máy lạnh."
+                data:
+                  tag: "balcony_door_opened_too_long"
+                  channel: "General_Alerts"
+                  clickAction: "/lovelace"
+  mode: parallel
+  max: 5
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NÚT HÀNH ĐỘNG THÔNG BÁO: ĐÓNG CỔNG & HÚ CÒI BÁO ĐỘNG
+# ─────────────────────────────────────────────────────────────────────────────
+- id: 'gate_notification_action_close_gate'
+  alias: 'Cửa Cổng - Đóng cổng từ thông báo'
+  description: 'Kích hoạt scene đóng cổng Tuya khi nhấn nút Đóng cổng trên thông báo'
+  trigger:
+    - platform: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: CLOSE_GATE
+  action:
+    - service: scene.turn_on
+      continue_on_error: true
+      target:
+        entity_id: scene.dong_cong
+    - service: notify.mobile_app_pixel_10_pro_xl
+      data:
+        message: "Đã gửi lệnh ĐÓNG CỔNG qua Tuya"
+        data:
+          tag: "gate_status"
+  mode: single
+
+- id: 'gate_notification_action_trigger_siren'
+  alias: 'Cửa Cổng - Hú còi báo động từ thông báo'
+  description: 'Hú còi camera sân trong 15 giây khi người dùng bấm Hú còi báo động từ thông báo'
+  trigger:
+    - platform: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: TRIGGER_SIREN
+  action:
+    - service: siren.turn_on
+      target:
+        entity_id: siren.camera_san_siren
+    - delay:
+        seconds: 15
+    - service: siren.turn_off
+      target:
+        entity_id: siren.camera_san_siren
+    - service: notify.mobile_app_pixel_10_pro_xl
+      data:
+        message: "Đã tắt còi báo động sau 15 giây"
+        data:
+          tag: "siren_status"
+  mode: single
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NHÓM 5: CẢNH BÁO PIN YẾU CHO TOÀN BỘ THIẾT BỊ (< 20%)
+# ─────────────────────────────────────────────────────────────────────────────
+- id: 'low_battery_alert_all_devices'
+  alias: 'Hệ Thống - Cảnh báo Pin Yếu cho Toàn Bộ Thiết Bị'
+  description: 'Tự động kiểm tra mức pin của tất cả cảm biến và thiết bị trong nhà mỗi ngày lúc 09:00 sáng hoặc khi có pin giảm dưới 20%'
+  trigger:
+    - platform: time
+      at: "09:00:00"
+    - platform: numeric_state
+      entity_id:
+        - sensor.gate_sensor_battery
+        - sensor.door_sensor_living_battery
+        - sensor.door_sensor_office_battery
+      below: 20
+  condition:
+    - condition: template
+      value_template: >-
+        {{ states.sensor 
+          | selectattr('attributes.device_class', 'defined')
+          | selectattr('attributes.device_class', 'eq', 'battery')
+          | rejectattr('entity_id', 'search', 'pixel|ngan_cute|phone|tablet')
+          | map(attribute='state')
+          | map('float', 100)
+          | select('lt', 20)
+          | list | count > 0 }}
+  action:
+    - variables:
+        low_batteries: >-
+          {% set ns = namespace(items=[]) %}
+          {% for s in states.sensor %}
+            {% if s.attributes.device_class == 'battery' and not ('pixel' in s.entity_id or 'ngan_cute' in s.entity_id) %}
+              {% set val = s.state | float(100) %}
+              {% if val < 20 %}
+                {% set ns.items = ns.items + [s.name ~ ' (' ~ val ~ '%)'] %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.items | join(', ') }}
+    - service: notify.mobile_app_pixel_10_pro_xl
+      data:
+        title: "🔋 CẢNH BÁO PIN YẾU THIẾT BỊ"
+        message: "Các thiết bị thông minh sau đang yếu pin (< 20%): {{ low_batteries }}. Bạn hãy thay pin sớm để duy trì hoạt động liên tục."
+        data:
+          tag: "low_battery_warning"
+          channel: "System_Alerts"
+          clickAction: "/developer-tools/state"
+  mode: single

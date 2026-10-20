@@ -42,6 +42,8 @@ config/home-assistant.log*
 media/
 media/**
 config/tts/
+config/www/snapshots/*
+!config/www/snapshots/.gitkeep
 /tmp/cache/
 
 # Python compiled cache
