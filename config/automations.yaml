@@ -475,7 +475,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 - id: 'living_door_opened_alert'
   alias: 'Cửa Chính - Cảnh báo Cửa Chính Mở kèm Ảnh Camera'
-  description: 'Khi cửa chính phòng khách mở: chụp ảnh phòng khách và sân trước, gửi cảnh báo an ninh về điện thoại'
+  description: 'Khi cửa chính phòng khách mở: chụp ảnh phòng khách và sân trước, gửi cảnh báo an ninh về điện thoại. Nếu vắng nhà: tự động hú còi báo động.'
   trigger:
     - platform: state
       entity_id: binary_sensor.door_sensor_living_door
@@ -496,12 +496,24 @@
         has_person: >-
           {{ is_state('binary_sensor.phong_khach_person_occupancy', 'on') or is_state('binary_sensor.san_truoc_person_occupancy', 'on') }}
 
-    # 3. Gửi thông báo an ninh kèm ảnh Camera Phòng Khách
+    # 3. Nếu vắng nhà: TỰ ĐỘNG HÚ CÒI BÁO ĐỘNG NGAY LẬP TỨC
+    - if:
+        - condition: template
+          value_template: "{{ is_away }}"
+      then:
+        - service: siren.turn_on
+          continue_on_error: true
+          target:
+            entity_id:
+              - siren.camera_san_siren
+              - siren.camera_phong_khach_siren
+
+    # 4. Gửi thông báo an ninh kèm ảnh Camera Phòng Khách
     - service: notify.mobile_app_pixel_10_pro_xl
       data:
         title: >-
           {% if is_away %}
-            🚨 CẢNH BÁO ĐỘT NHẬP: CỬA CHÍNH MỞ KHI VẮNG NHÀ!
+            🚨 BÁO ĐỘNG ĐỘT NHẬP: CỬA CHÍNH MỞ KHI VẮNG NHÀ!
           {% elif is_night %}
             🌙 CẢNH BÁO: CỬA CHÍNH MỞ BAN ĐÊM ({{ now().strftime('%H:%M:%S') }})
           {% else %}
@@ -509,7 +521,7 @@
           {% endif %}
         message: >-
           {% if is_away %}
-            ⚠️ Phát hiện cửa chính bị mở khi không có ai ở nhà! AI {{ 'phát hiện có Người' if has_person else 'chưa thấy người' }}.
+            ⚠️ Phát hiện cửa chính bị mở khi không có ai ở nhà! Còi báo động đã tự động kích hoạt. AI {{ 'phát hiện có Người' if has_person else 'chưa thấy người' }}.
           {% elif is_night %}
             Cửa chính mở vào khung giờ khuya. AI {{ 'phát hiện có Người' if has_person else 'chưa thấy người' }}.
           {% else %}
@@ -529,6 +541,70 @@
               title: "🚨 Hú còi báo động"
             - action: "CLOSE_GATE"
               title: "🔒 Đóng cổng nếu mở"
+  mode: single
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHỐNG LEO RÀO: PHÁT HIỆN NGƯỜI SÂN TRƯỚC KHI CỔNG ĐANG ĐÓNG KÍN
+# ─────────────────────────────────────────────────────────────────────────────
+- id: 'san_truoc_fence_jump_intrusion_alert'
+  alias: 'Sân Trước - Cảnh báo Nghi vấn Leo Rào Đột Nhập (Cổng Đóng)'
+  description: 'Khi phát hiện có Người ở Sân Trước vào ban đêm hoặc khi vắng nhà mà Cửa Cổng vẫn đang đóng kín (dấu hiệu leo rào)'
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.san_truoc_person_occupancy
+      to: 'on'
+  condition:
+    # Cổng chính vẫn đang đóng kín
+    - condition: state
+      entity_id: binary_sensor.gate_sensor_door
+      state: 'off'
+    # Xảy ra khi Vắng nhà HOẶC Ban đêm (23h - 5h)
+    - condition: template
+      value_template: >-
+        {{ (not is_state('person.nho_tin', 'home') and not is_state('person.hong_ngan', 'home')) or (now().hour >= 23 or now().hour < 5) }}
+  action:
+    # 1. Bật ngay sáng trưng toàn bộ 3 đèn Sân Trước để đuổi kẻ gian
+    - service: switch.turn_on
+      continue_on_error: true
+      target:
+        entity_id:
+          - switch.san_truoc_switch_1
+          - switch.san_truoc_switch_2
+          - switch.san_truoc_switch_3
+
+    # 2. Chụp ảnh snapshot góc Cổng & Sân Trước
+    - service: shell_command.save_gate_snapshots
+      continue_on_error: true
+    - delay:
+        milliseconds: 300
+
+    - variables:
+        is_away: >-
+          {{ not is_state('person.nho_tin', 'home') and not is_state('person.hong_ngan', 'home') }}
+
+    # 3. Gửi thông báo khẩn cấp (Critical Alert) về điện thoại
+    - service: notify.mobile_app_pixel_10_pro_xl
+      data:
+        title: >-
+          {% if is_away %}
+            🚨 BÁO ĐỘNG ĐỘT NHẬP: NGHI VẤN LEO RÀO VÀO SÂN (CỔNG ĐÓNG)!
+          {% else %}
+            🌙 CẢNH BÁO KHẨN: CÓ NGƯỜI Ở SÂN TRƯỚC BAN ĐÊM (CỔNG ĐÓNG)!
+          {% endif %}
+        message: >-
+          Cổng chính đang đóng kín nhưng AI phát hiện có Người xuất hiện ở Sân Trước lúc {{ now().strftime('%H:%M:%S') }}. Đèn sân đã tự động bật sáng rực rỡ!
+        data:
+          image: "/local/snapshots/san_truoc_latest.jpg?v={{ now().timestamp() }}"
+          group: "intrusion_event"
+          tag: "fence_jump_alert"
+          channel: "alarm_stream"
+          importance: "high"
+          clickAction: "/frigate-nvr"
+          actions:
+            - action: "TRIGGER_SIREN"
+              title: "🚨 Hú còi báo động ngay"
+            - action: "TURN_ON_LIVING_LIGHTS"
+              title: "💡 Bật sáng đèn phòng khách"
   mode: single
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -741,6 +817,30 @@
         message: "Đã bật sáng toàn bộ đèn và đèn pha ban công"
         data:
           tag: "balcony_status"
+  mode: single
+
+- id: 'living_notification_action_turn_on_lights'
+  alias: 'Phòng Khách - Bật sáng đèn phòng khách từ thông báo'
+  description: 'Bật toàn bộ đèn phòng khách khi người dùng bấm nút trên thông báo'
+  trigger:
+    - platform: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: TURN_ON_LIVING_LIGHTS
+  action:
+    - service: switch.turn_on
+      continue_on_error: true
+      target:
+        entity_id:
+          - switch.phong_khach_switch_1
+          - switch.phong_khach_switch_2
+          - switch.phong_khach_switch_3
+          - switch.phong_khach_switch_4
+    - service: notify.mobile_app_pixel_10_pro_xl
+      data:
+        message: "Đã bật sáng đèn và quạt phòng khách"
+        data:
+          tag: "living_status"
   mode: single
 
 # ─────────────────────────────────────────────────────────────────────────────
