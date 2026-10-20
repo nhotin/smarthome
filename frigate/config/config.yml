@@ -171,11 +171,11 @@ cameras:
       height: 720
       fps: 5
     zones:
-      khu_vuc_phong_khach:
-        coordinates: "0,0,640,0,640,340,0,340"
+      khu_vuc_bep:
+        coordinates: "0,0,640,0,640,350,0,350"
         objects:
           - person
-      khu_vuc_bep:
+      khu_vuc_phong_khach:
         coordinates: "0,360,640,360,640,720,0,720"
         objects:
           - person
