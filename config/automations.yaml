@@ -171,7 +171,7 @@
               value_template: "{{ trigger.entity_id in ['binary_sensor.san_truoc_person_occupancy', 'binary_sensor.gate_sensor_door'] }}"
             - condition: template
               value_template: >-
-                {{ is_state('sun.sun', 'below_horizon') or now().hour >= 18 or now().hour < 6 }}
+                {{ is_state('sun.sun', 'below_horizon') or now().hour >= 17 or (now().hour == 16 and now().minute >= 45) or now().hour < 6 }}
           sequence:
             - service: switch.turn_on
               continue_on_error: true
@@ -193,7 +193,7 @@
             - if:
                 - condition: template
                   value_template: >-
-                    {{ is_state('sun.sun', 'below_horizon') or now().hour >= 18 or now().hour < 6 }}
+                    {{ is_state('sun.sun', 'below_horizon') or now().hour >= 17 or (now().hour == 16 and now().minute >= 45) or now().hour < 6 }}
               then:
                 - service: switch.turn_on
                   continue_on_error: true
@@ -209,7 +209,7 @@
               value_template: "{{ trigger.entity_id == 'binary_sensor.khu_vuc_bep_person_occupancy' }}"
             - condition: template
               value_template: >-
-                {{ is_state('sun.sun', 'below_horizon') or now().hour >= 18 or now().hour < 6 }}
+                {{ is_state('sun.sun', 'below_horizon') or now().hour >= 17 or (now().hour == 16 and now().minute >= 45) or now().hour < 6 }}
           sequence:
             - service: switch.turn_on
               continue_on_error: true
@@ -233,7 +233,7 @@
               value_template: "{{ trigger.entity_id in ['binary_sensor.ban_cong_person_occupancy', 'binary_sensor.door_sensor_office_door'] }}"
             - condition: template
               value_template: >-
-                {{ is_state('sun.sun', 'below_horizon') or now().hour >= 18 or now().hour < 6 }}
+                {{ is_state('sun.sun', 'below_horizon') or now().hour >= 17 or (now().hour == 16 and now().minute >= 45) or now().hour < 6 }}
           sequence:
             - service: switch.turn_on
               continue_on_error: true
